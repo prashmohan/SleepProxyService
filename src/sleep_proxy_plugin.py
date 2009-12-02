@@ -80,8 +80,16 @@ class SleepPlugin(GmetadPlugin):
 
     def notify(self, clusterNode):
         '''Called by the engine when the internal data source has changed.'''
+        try:
+            lock.testandset()
+            self._populateState(clusterNode)
+        except:
+            logging.error("Could not populate cluster state properly!")
+        finally:
+            lock.unlock()
         
-        lock.testandset()
+    def _populateState(self, clusterNode):
+        
         # clusterState [clusterName] [hostName] [metricName] = [val, sum, num]
         clusterName = str(clusterNode.getAttr('name'))
         if not clusterState.has_key(clusterName):
@@ -117,7 +125,10 @@ class SleepPlugin(GmetadPlugin):
                 except:
                     pass
                 
-                if metricName == "SLEEP_INTENT" and metricVal[0] == "YES" and (not currentHost.has_key(metricName) or currentHost[metricName][0] != "YES"):
+                if metricName == "SLEEP_INTENT" and \
+                    metricVal[0] == "YES" and \
+                    (not currentHost.has_key(metricName) or \
+                        currentHost[metricName][0] != "YES"):
                     # Handle calling to CCd and informing receipt of SLEEP INTENT
                     # Create a socket (SOCK_STREAM means a TCP socket)
                     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -135,7 +146,7 @@ class SleepPlugin(GmetadPlugin):
             curCluster = clusterState[cluster]
             for node in curCluster.keys():
                 print node, curCluster[node]
-        lock.unlock()
+
 
 if __name__ == '__main__':
     print "This is not a stand alone program. This should be executed only as part of the python gmetad program as a plugin!"
