@@ -17,7 +17,6 @@ import logging
 import socket
 import datetime
 import time
-import threading
 import SocketServer
 import mutex
 import cPickle
@@ -27,17 +26,7 @@ from Gmetad.gmetad_plugin import GmetadPlugin
 from Gmetad.gmetad_config import getConfig, GmetadConfig
 
 lock = mutex.mutex()
-clusterState = {}
-
-class ClusterStateThread(threading.Thread):
-    """This is the thread class which will start the server providing cluster state to schedulers"""
-    def __init__(self):
-        super(ClusterStateThread, self).__init__()
-        
-    def run ( self ):
-        server = SocketServer.TCPServer(('', common.CLUSTER_STATE_SERVER_PORT), ClusterStateServer)
-        server.serve_forever()
-        
+clusterState = {}        
 
 class ClusterStateServer(SocketServer.StreamRequestHandler):
     def handle(self):
@@ -57,7 +46,6 @@ def get_plugin():
 class SleepPlugin(GmetadPlugin):
     ''' This class implements the RRD plugin that stores metric data to RRD files.'''
     
-    
     def __init__(self, cfgid):
         # The call to the parent class __init__ must be last
         GmetadPlugin.__init__(self, cfgid)
@@ -71,7 +59,7 @@ class SleepPlugin(GmetadPlugin):
 
     def start(self):
         '''Called by the engine during initialization to get the plugin going.'''
-        self.stateThread = ClusterStateThread()
+        self.stateThread = common.ServiceLauncher(common.CLUSTER_STATE_SERVER_PORT, ClusterStateServer)
         self.stateThread.start()
     
     def stop(self):
