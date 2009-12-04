@@ -22,4 +22,16 @@ public class SimulatedJob {
 		
 	}
 
+	public String getJobId() {
+		return traceJob.getJobId();
+	}
+
+	public void start(int time) {
+		startTime = time;
+	}
+	
+	public String toString() {
+		return "<" + traceJob.getJobId() + "," + startTime + "," + requiredTime + ">";
+	}
+
 }
