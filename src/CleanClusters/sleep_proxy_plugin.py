@@ -12,7 +12,6 @@ to sleep if they are idle. The plugin also provides an interface to wake up
 individual nodes if needed.
 """
 import os
-import rrdtool
 import logging
 import socket
 import datetime
@@ -95,6 +94,7 @@ class SleepPlugin(GmetadPlugin):
                 
             currentHost = currentCluster[hostName]
             currentHost['last_heard'] = int(hostNode.getAttr('reported'))
+            currentHost['IP'] = str(hostNode.getAttr('ip'))
             # Update metrics for each host
             for metricNode in hostNode:
                 metricName = str(metricNode.getAttr('name'))

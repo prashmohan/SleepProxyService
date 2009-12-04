@@ -55,8 +55,6 @@ class CCexecd(SocketServer.StreamRequestHandler):
     """This class receives the command to be executed along with stdin input 
     and pipes back stdout over the network"""
     
-        
-    
     def handle(self):
         CURRENTLY_PROCESSING_JOB = True
         try:
@@ -132,8 +130,6 @@ def main():
     common.ServiceLauncher(common.CCD_PORT, CCd).start()
     common.ServiceLauncher(common.CCD_EXEC_PORT, CCexecd).start()
     monitor.start()
-#    CCdStarter().start()
-#    CCexecdStarter().start()
 
 
 if __name__ == '__main__':
