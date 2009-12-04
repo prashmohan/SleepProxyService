@@ -15,11 +15,13 @@ public interface Node {
 	enum PowerState {
 		ON,
 		OFF,
-		SLEEP
+		SLEEP,
+		WAKING
 	}
 
 	public boolean isAvailable();
 
+	public boolean isOn();
 	public boolean isSleeping();
 
 	public void setAvailable(boolean b);

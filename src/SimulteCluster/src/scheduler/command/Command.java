@@ -9,17 +9,23 @@ import node.Node;
 
 public abstract class Command {
 	protected final Node node;
-
-	public Command(Node node) {
+	protected final int startTime;
+	
+	public Command(Node node, int startTime) {
 		this.node = node;
+		this.startTime = startTime;
 	}
 	
 	public Node getNode() {
 		return node;
 	}
 
-	abstract public int getTimeToExecute();
-
 	public abstract void execute(Map<Node, ArrayList<SimulatedJob>> nodeStatus,
-			List<SimulatedJob> jobStatus);
+			List<SimulatedJob> jobStatus, int time);
+
+	public abstract boolean isFinished(int time);
+	
+	public abstract boolean shouldExecute(int time);
+	
+	public abstract String toString();
 }

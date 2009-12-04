@@ -57,7 +57,13 @@ public class TraceList {
 						temp.diskUse = (int) ((getOnlyNumerics(x[33]) * 1.0 / getOnlyNumerics(x[31])) * 1024);
 						temp.memUse = (int) ((getOnlyNumerics(x[32]) * 1.0 / getOnlyNumerics(x[31])) * 1024);
 						temp.vMemUse = (int) ((getOnlyNumerics(x[34]) * 1.0 / getOnlyNumerics(x[31])) * 1024);
-						if (temp.cpuUse < 100 && temp.cpuUse > 0 && temp.nproc > 0) {
+						if (temp.cpuUse > 100) {
+							temp.cpuUse = 100;
+						}
+						if (temp.cpuUse < 0) {
+							temp.cpuUse = 0;
+						}
+						if (temp.cpuUse <= 100 && temp.cpuUse >= 0 && temp.nproc > 0) {
 							getTracelist().add(temp);
 							heaplimit++;
 						}
@@ -90,8 +96,8 @@ public class TraceList {
 						lastjobId = x[0];
 						temp.jobId = x[0];
 						temp.timeLimit = (int) Double.parseDouble(x[8]);
-						temp.submitTime = getOnlyNumerics(x[1]);
-						temp.dispatchTime = getOnlyNumerics(x[1])+getOnlyNumerics(x[2]);
+						temp.submitTime = getOnlyNumerics(x[1]) / 1000;
+						temp.dispatchTime = getOnlyNumerics(x[1])+getOnlyNumerics(x[2]) / 1000;
 						int TotalRunTime = getOnlyNumerics(x[3]);
 						Double ProcessorTimeUtilised = Double
 								.parseDouble(x[5]);
