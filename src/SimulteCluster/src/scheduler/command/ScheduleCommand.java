@@ -1,8 +1,6 @@
 package scheduler.command;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import job.SimulatedJob;
 import node.Node;
@@ -17,11 +15,11 @@ public class ScheduleCommand extends Command {
 	}
 
 	@Override
-	public void execute(Map<Node, ArrayList<SimulatedJob>> nodeStatus,
-			List<SimulatedJob> jobStatus, int time) {
-		ArrayList<SimulatedJob> nodeJobs = nodeStatus.get(node);
+	public void execute(List<SimulatedJob> jobStatus, int time) {
+		List<SimulatedJob> nodeJobs = node.getJobs();
 		nodeJobs.add(job);
 		jobStatus.add(job);
+		node.addJob(job);
 		job.start(time);
 	}
 

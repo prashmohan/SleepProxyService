@@ -1,41 +1,37 @@
 package scheduler.command;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
 import job.SimulatedJob;
 import node.Node;
 import node.Node.PowerState;
 
 public class WakeCommand extends Command {
 
+	int timeToWake;
+	
 	public WakeCommand(Node node, int startTime) {
 		super(node, startTime);
+		timeToWake = node.getTimeToWake();
 	}
 
 	@Override
-	public void execute(Map<Node, ArrayList<SimulatedJob>> nodeStatus,
-			List<SimulatedJob> jobStatus, int time) {
-		assert(nodeStatus.containsKey(node));
+	public void execute(List<SimulatedJob> jobStatus, int time) {
 		if (time - startTime == 0)
 			node.setState(PowerState.WAKING);
 		
-		if (time - startTime == 6)
+		if (time - startTime == timeToWake)
 			node.setState(PowerState.ON);
 	}
 
-	
-	
 	@Override
 	public boolean isFinished(int time) {
-		return time - startTime > 6;
+		return time - startTime > timeToWake;
 	}
 
 	@Override
 	public boolean shouldExecute(int time) {
 		int timeDif = time - startTime;
-		return timeDif == 0 || timeDif == 6;
+		return timeDif == 0 || timeDif == timeToWake;
 	}
 
 	public String toString() {

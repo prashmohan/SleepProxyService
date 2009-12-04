@@ -1,9 +1,6 @@
 package scheduler.command;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
 import job.SimulatedJob;
 import node.Node;
 
@@ -20,8 +17,7 @@ public abstract class Command {
 		return node;
 	}
 
-	public abstract void execute(Map<Node, ArrayList<SimulatedJob>> nodeStatus,
-			List<SimulatedJob> jobStatus, int time);
+	public abstract void execute(List<SimulatedJob> jobStatus, int time);
 
 	public abstract boolean isFinished(int time);
 	

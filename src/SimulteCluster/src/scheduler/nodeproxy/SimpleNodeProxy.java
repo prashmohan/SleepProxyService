@@ -18,14 +18,13 @@ public class SimpleNodeProxy implements NodeProxy {
 	public List<Node> getAvailableNodes(int numNodesRequired, int time) {
 		List<Node> nodesAvailable = new ArrayList<Node>();
 		for (Node node : nodes) {
-			if (node.isAvailable()) {
+			if (node.isOn() && node.getNumberOfJobs(time) == 0) {
 				nodesAvailable.add(node);
 			}
 			if (nodesAvailable.size() >= numNodesRequired) {
 				break;
 			}
 		}
-	
 		return nodesAvailable;
 	}
 

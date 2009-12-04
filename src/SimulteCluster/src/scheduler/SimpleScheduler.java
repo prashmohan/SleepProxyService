@@ -8,7 +8,6 @@ import node.Node;
 import job.SimulatedJob;
 import scheduler.command.Command;
 import scheduler.command.ScheduleCommand;
-import scheduler.command.WakeCommand;
 import scheduler.nodeproxy.NodeProxy;
 import scheduler.nodeproxy.SimpleNodeProxy;
 import trace.TraceJob;
@@ -65,14 +64,13 @@ public class SimpleScheduler implements Scheduler {
 			for (int i = 0; i < job.getNodesRequired(); i++) {
 				SimulatedJob simJob = new SimulatedJob(job);
 				Node node = nodesAvailable.remove(0);
-				node.setAvailable(false);
+				node.incNumScheduledJobs();
 				ScheduleCommand com = new ScheduleCommand(node, simJob, time);
 				commands.add(com);
 			}
 		}
 		
 		commands.addAll(nodeProxy.getCommands(time));
-		
 		return commands;
 	}
 

@@ -2,10 +2,7 @@ package simulator;
 
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import node.Node;
 import node.SimpleNode;
 
@@ -19,7 +16,6 @@ public class Simulator {
 
 	private Scheduler scheduler;
 	private int time;
-	private Map<Node, ArrayList<SimulatedJob>> jobsOnNode;
 	private List<Node> nodes;
 	private List<SimulatedJob> jobStatus;
 	private List<Command> queuedCommands;
@@ -32,11 +28,7 @@ public class Simulator {
 	
 	public void initialize() {
 		jobStatus = new ArrayList<SimulatedJob>();
-		jobsOnNode = new HashMap<Node, ArrayList<SimulatedJob>>();
 		queuedCommands = new ArrayList<Command>();
-		for(Node node : nodes) {
-			jobsOnNode.put(node, new ArrayList<SimulatedJob>());
-		}
 		time = 0;
 	}
 
@@ -49,6 +41,8 @@ public class Simulator {
 	private void simulate() {
 		processQueuedCommands();
 		processJobsOnNodes();
+	
+		time++;
 		
 		List<Command> commands = scheduler.getCommands(time);
 		if (commands != null) {
@@ -56,15 +50,14 @@ public class Simulator {
 				queuedCommands.add(command);
 			}
 		}
-		time++;
 	}
 
 	private void processJobsOnNodes() {
-		for(Node node : jobsOnNode.keySet()) {
+		for(Node node : nodes) {
 			if (!node.isOn()) 
 				continue;
 			
-			ArrayList<SimulatedJob> nodeJobs = jobsOnNode.get(node);
+			List<SimulatedJob> nodeJobs = node.getJobs();
 			if (nodeJobs.size() == 0) 
 				continue;
 			
@@ -74,10 +67,6 @@ public class Simulator {
 				if(job.isFinished(time)) {
 					finishedJobs.add(job);
 				}
-			}
-			
-			if (nodeJobs.size() == finishedJobs.size()) {
-				node.setAvailable(true);
 			}
 			
 			for (SimulatedJob finishedJob : finishedJobs) {
@@ -92,16 +81,14 @@ public class Simulator {
 		List<Command> finishedCommands = new ArrayList<Command>();
 		for (Command command : queuedCommands) {
 			if (command.shouldExecute(time)) {
-				System.out.println(command);
-				command.execute(jobsOnNode, jobStatus, time);
+				System.out.println("" + time + ":" + command);
+				command.execute(jobStatus, time);
 			}
 			if (command.isFinished(time)) {
 				finishedCommands.add(command);
 			}
 		}
-		for (Command command : finishedCommands) {
-			queuedCommands.remove(command);
-		}
+		queuedCommands.removeAll(finishedCommands);
 	}
 
 	private boolean finished() {
@@ -117,7 +104,7 @@ public class Simulator {
 		List<Node> nodes = new ArrayList<Node>();
 		int numNodes = 35;
 		for (int i = 0; i < numNodes; i++) {
-			nodes.add(new SimpleNode("" + i));
+			nodes.add(new SimpleNode("" + i, 60, 60));
 		}
 		Scheduler scheduler = new SleepScheduler(trace.getTracelist(), nodes, 5);
 		Simulator simulator = new Simulator(scheduler);
