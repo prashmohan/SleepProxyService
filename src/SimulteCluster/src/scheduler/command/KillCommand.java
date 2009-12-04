@@ -1,9 +1,6 @@
 package scheduler.command;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
 import trace.TraceJob;
 
 import job.SimulatedJob;
@@ -12,16 +9,15 @@ import node.Node;
 public class KillCommand extends Command {
 
 	private TraceJob job;
-	
+
 	public KillCommand(Node node, TraceJob job, int startTime) {
 		super(node, startTime);
 		this.job = job;
 	}
 
 	@Override
-	public void execute(Map<Node, ArrayList<SimulatedJob>> nodeStatus,
-			List<SimulatedJob> jobStatus, int time) {
-		ArrayList<SimulatedJob> nodeJobs = nodeStatus.get(node);
+	public void execute(List<SimulatedJob> jobStatus, int time) {
+		List<SimulatedJob> nodeJobs = node.getJobs();
 		nodeJobs.remove(job);
 		jobStatus.remove(job);
 	}
@@ -37,6 +33,7 @@ public class KillCommand extends Command {
 	}
 
 	public String toString() {
-		return "Kill(" + startTime + "): node " + node.getNodeId() + "," + job.getJobId();
+		return "Kill(" + startTime + "): node " + node.getNodeId() + ","
+				+ job.getJobId();
 	}
 }

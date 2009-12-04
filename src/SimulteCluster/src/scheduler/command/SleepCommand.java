@@ -1,34 +1,33 @@
 package scheduler.command;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
 import job.SimulatedJob;
 import node.Node;
 import node.Node.PowerState;
 
 public class SleepCommand extends Command {
 
+	int timeToSleep;
+	
 	public SleepCommand(Node node, int startTime) {
 		super(node, startTime);
+		timeToSleep = node.getTimeToSleep();
 	}
 
 	@Override
-	public void execute(Map<Node, ArrayList<SimulatedJob>> nodeStatus,
-			List<SimulatedJob> jobStatus, int time) {
-		assert(nodeStatus.containsKey(node) && nodeStatus.get(node).isEmpty());
+	public void execute(List<SimulatedJob> jobStatus, int time) {
+		assert(node.getJobs().isEmpty());
 		node.setState(PowerState.SLEEP);
 	}
 
 	@Override
 	public boolean isFinished(int time) {
-		return time - startTime > 6;
+		return time - startTime > timeToSleep;
 	}
 
 	@Override
 	public boolean shouldExecute(int time) {
-		return time - startTime == 6;
+		return time - startTime == timeToSleep;
 	}
 	
 	public String toString() {
