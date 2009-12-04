@@ -34,7 +34,7 @@
 </head>
 
 <body>
-  <a href="http://github.com/prashmohan/SleepProxyService"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+  <a href="http://github.com/prashmohan/SleepProxyService"><!-- <img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a> -->
   
   <div id="container">
 
@@ -53,15 +53,18 @@
     </div>
 
     <p>Sleep Proxy Service is a research prototype pursued at the University of California at Berkeley. The scope of the project is to manage the nodes in a cluster going to sleep and coming back alive. This is done in order to save aggregate energy used in the cluster.</p><h2>Dependencies</h2>
-<p>Ganglia (gmond, gmetad--python)</p>
+<p>Ganglia (gmond, gmetad-python)</p>
 <h2>Install</h2>
 <p>Master Node: Put sleep_proxy_plugin.py and common.py inside your gmetad-python plugin directory and start gmetad.py. Also install CCexec.py into all of these nodes.
 
 Slave Nodes: Put CCd.py and common.py inside a common directory (say CCd) and run CCd.py on all nodes (make sure gmond is running before this).</p>
 <h2>Authors</h2>
-<p>Shaon Barman (sbarman@cs.berkeley.edu)<br/>Prashanth Mohan (prmohan@cs.berkeley.edu)<br/>Himanshu Sharma (himanshu@cs.berkeley.edu)<br/>      </p>
+<p>Shaon Barman
+<br/><a href="http://www.cs.berkeley.edu/~prmohan">Prashanth Mohan</a>
+<br/>Himanshu Sharma
+<br/>      </p>
 <h2>Contact</h2>
-<p>Prashanth Mohan (prashmohan+github@gmail.com)</p>
+<p>Prashanth Mohan (first 5 letters of first name and second name together @gmail.com)</p>
 
 
     <h2>Download</h2>
@@ -81,6 +84,14 @@ Slave Nodes: Put CCd.py and common.py inside a common directory (say CCd) and ru
     
   </div>
 
-  
+  <script type="text/javascript">
+  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+  </script>
+  <script type="text/javascript">
+  try {
+  var pageTracker = _gat._getTracker("UA-79829-8");
+  pageTracker._trackPageview();
+  } catch(err) {}</script>
 </body>
 </html>
