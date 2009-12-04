@@ -82,6 +82,14 @@ class CCMonitor(object):
     
     def __init__(self):
         self.last_sleep_metric = False
+        self.can_sleep = False
+        macaddr = common.get_mac_addr()
+        if macaddr == '':
+            logging.error("Could not retrieve mac address of machine")
+        else:
+            subprocess.Popen("gmetric -n \"MACADDR\" -v \"" + macaddr + "\" -t \"string\"")
+            self.can_sleep = True
+
         
     def start(self):
         while True:
@@ -92,7 +100,7 @@ class CCMonitor(object):
             time.sleep(JOB_CHECK_SLEEP_INTVL)  
             
     def check_if_idle(self):
-        if not CURRENTLY_PROCESSING_JOB and time.time() - LAST_JOB_FINISH > IDLE_BEFORE_SLEEP_INTVL:
+        if not CURRENTLY_PROCESSING_JOB and time.time() - LAST_JOB_FINISH > IDLE_BEFORE_SLEEP_INTVL and self.can_sleep:
             return True
         return False  
     
