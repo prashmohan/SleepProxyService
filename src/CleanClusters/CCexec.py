@@ -12,6 +12,8 @@ import socket
 import cPickle
 import optparse
 import math
+import threading
+import logging
 
 DEAD_WAIT_TIME  = 300 # seconds
 MIN_CPU_AVAIL   = 1200  # Mhz
@@ -88,7 +90,7 @@ class Node(threading.Thread):
     def __del__(self):
         if self.sock:
             try:
-                self.sock.close:
+                self.sock.close
             except:
                 pass
                 
@@ -114,7 +116,7 @@ def cpu_cmp(node1, node2):
         return -1
         
         
-class StdinFeeder(thread.Thread):
+class StdinFeeder(threading.Thread):
     """docstring for StdinFeeder"""
     def __init__(self, sock_list):
         super(StdinFeeder, self).__init__()
@@ -150,7 +152,7 @@ class Scheduler(object):
         self.overloaded_node_ptr = 0
         
     
-    def _retrieve_cluster_info():
+    def _retrieve_cluster_info(self):
         """Retrieves information about hosts in the cluster from the local sleep proxy plugin daemon"""
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         buf = ''    

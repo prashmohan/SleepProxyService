@@ -29,10 +29,15 @@ clusterState = {}
 
 class ClusterStateServer(SocketServer.StreamRequestHandler):
     def handle(self):
+        logging.debug("Received request for cluster state server")
         lock.testandset()
+        logging.debug("Received lock on cluster state")
+        global clusterState
         pick_bytes = cPickle.dumps(clusterState,2)
-        lock.unlock()        
+        lock.unlock()
+        logging.debug("Unlocking cluster state")
         self.request.send(pick_bytes)
+        logging.debug("Sending " + str(len(pick_bytes)) + " bytes of data ")
 
 
 def get_plugin():
@@ -48,6 +53,7 @@ class SleepPlugin(GmetadPlugin):
     def __init__(self, cfgid):
         # The call to the parent class __init__ must be last
         GmetadPlugin.__init__(self, cfgid)
+        self.start()
     
     def _parseConfig(self, cfgdata):
         '''This method overrides the plugin base class method.  It is used to
@@ -58,8 +64,10 @@ class SleepPlugin(GmetadPlugin):
 
     def start(self):
         '''Called by the engine during initialization to get the plugin going.'''
+        logging.debug ("Starting cluster state server")
         self.stateThread = common.ServiceLauncher(common.CLUSTER_STATE_SERVER_PORT, ClusterStateServer)
         self.stateThread.start()
+        logging.debug("Cluster state server has started")
     
     def stop(self):
         '''Called by the engine during shutdown to allow the plugin to shutdown.'''        
@@ -79,6 +87,7 @@ class SleepPlugin(GmetadPlugin):
         
         # clusterState [clusterName] [hostName] [metricName] = [val, sum, num]
         clusterName = str(clusterNode.getAttr('name'))
+        global clusterState
         if not clusterState.has_key(clusterName):
             logging.debug("SLEEP: Found cluster " + clusterName)
             clusterState[clusterName] = {}
