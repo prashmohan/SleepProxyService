@@ -53,7 +53,10 @@ class SleepPlugin(GmetadPlugin):
     def __init__(self, cfgid):
         # The call to the parent class __init__ must be last
         GmetadPlugin.__init__(self, cfgid)
-        self.start()
+        logging.debug ("Starting cluster state server")
+        self.stateThread = common.ServiceLauncher(common.CLUSTER_STATE_SERVER_PORT, ClusterStateServer, address="localhost")
+        self.stateThread.start()
+        logging.debug("Cluster state server has started")
     
     def _parseConfig(self, cfgdata):
         '''This method overrides the plugin base class method.  It is used to
@@ -64,10 +67,7 @@ class SleepPlugin(GmetadPlugin):
 
     def start(self):
         '''Called by the engine during initialization to get the plugin going.'''
-        logging.debug ("Starting cluster state server")
-        self.stateThread = common.ServiceLauncher(common.CLUSTER_STATE_SERVER_PORT, ClusterStateServer)
-        self.stateThread.start()
-        logging.debug("Cluster state server has started")
+        pass
     
     def stop(self):
         '''Called by the engine during shutdown to allow the plugin to shutdown.'''        
