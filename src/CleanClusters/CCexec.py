@@ -20,7 +20,7 @@ import time
 DEAD_WAIT_TIME  = 300 # seconds
 MIN_CPU_AVAIL   = 1200  # Mhz
 TIME_BTW_CONN   = 0.5 # seconds
-TIME_BTW_NODE_CHECK = 0 # seconds
+TIME_BTW_NODE_CHECK = 0.1 # seconds
 ACPI_MAX_WAKEUP_TIME = 10 # seconds
 CONN_MAX_RETRY_COUNT = math.ceil(ACPI_MAX_WAKEUP_TIME / TIME_BTW_CONN)
 
@@ -46,7 +46,7 @@ class Job(object):
         self.instances = instances
         
     def get_repr(self):
-        return "Job: " + self.instances + " instances of '" + self.command + "'"
+        return "Job: " + str(self.instances) + " instances of '" + self.command + "'"
         
     def __repr__(self):
         return self.get_repr()
@@ -81,16 +81,16 @@ class Node(threading.Thread):
 
     def wakeup(self):
         if not self.mac == "":
-            subprocess.Popen('wakeonlan ' + self.mac) 
             logging.info ("Waking up Node " + self.name)
+            subprocess.Popen('wakeonlan ' + self.mac)            
         else:
             logging.info ("Node " + self.name + " does not have an associated mac address. Cannot be woken up")
         
     def connect(self):
-        retries += 1
+        self.retries += 1
         try:
             logging.debug("Attempting to connect to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
-            self.sock.connect((self.ip, common.CCD_EXEC_PORT))
+            # self.sock.connect((self.ip, common.CCD_EXEC_PORT))
             self.connected = True
             logging.info("Connected to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
         except:
@@ -101,7 +101,7 @@ class Node(threading.Thread):
         """Try and execute a job on the node. Returns False if unsuccessful"""
         try:
             logging.info("Sending " + job.command + " to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
-            self.sock.send(job.command)
+            # self.sock.send(job.command)
         except:
             logging.exception("Could not send job command")
             
@@ -117,8 +117,10 @@ class Node(threading.Thread):
                 
     def run(self):
         """Best effort connect service"""
+        logging.info("Got node connection request")
         while self.retries < CONN_MAX_RETRY_COUNT and not self.connected:
             try:
+                logging.info("Connecting!")
                 self.connect()
                 break
             except:
@@ -146,7 +148,8 @@ class StdinFeeder(threading.Thread):
             line = raw_input("Insert input to program here: ")#sys.stdin.readline()
             for sock in sock_list:
                 try:
-                    sock.send(line)
+                    # sock.send(line)
+                    logging.debug ("Sending " + line)
                 except:
                     logging.exception("Can no longer send data over " + repr(sock))
                     sock_list.remove(sock)
@@ -205,7 +208,7 @@ class Scheduler(object):
                 cpu_num = int(host['cpu_num'][0])
                 cpu_speed = int(host['cpu_speed'][0])
                 cpu_avail = idle * cpu_num * cpu_speed
-                node = Node(host, ip, mac, cpu_avail)                
+                node = Node(host_name, ip, mac, cpu_avail)                
                 if time.time() - host['last_heard'] > DEAD_WAIT_TIME and (not host.has_key('SLEEP_INTENT') or host['SLEEP_INTENT'] != 'YES'):
                     self.dead_nodes.append(node)
                 elif host.has_key('SLEEP_INTENT') and host['SLEEP_INTENT'] == 'YES':
@@ -236,6 +239,7 @@ class Scheduler(object):
         return return_node
         
     def _populate_node_list(self, total_nodes):
+        logging.debug("Populating list with " + str(total_nodes) + " nodes")
         new_list = []
         while len(new_list) < total_nodes:
             new_node = self._get_next_node()
@@ -254,24 +258,29 @@ class Scheduler(object):
         while True:
             new_list = self._populate_node_list(total_instances - len(selected_nodes))
             selected_nodes += new_list
+            logging.debug ("List of populated nodes: " + repr(selected_nodes))
             connected = 0
             for node in selected_nodes:
                 if not node.connected and node.failed:
+                    logging.info("Not using " + repr(node))
                     selected_nodes.remove(node)
                     no_change = False
                     continue
                 elif not node.connected and not node.started:
+                    logging.info("Starting " + repr(node))
                     node.started = True
                     node.start()
                     no_change = False
                 elif node.connected:
                     connected += 1
-                    
+            logging.debug(str(connected) + " connected nodes")
             if connected ==  total_instances:
                 break
+            
             time.sleep(TIME_BTW_NODE_CHECK)
         
         sock_list = []
+        logging.info("Final list of selected nodes: " + repr(selected_nodes))
         for node in selected_nodes:
             node.execute(job)
             sock_list.append(node.sock)
@@ -280,6 +289,7 @@ class Scheduler(object):
         StdinFeeder(sock_list).start()
         
         while True:
+            line = raw_input()
             reader, writer, errer = select.select([read_sock_list], [], [], 60)
             for sock in reader:
                 data = ''
@@ -294,7 +304,9 @@ class Scheduler(object):
                         
 def main():
     job = parse_options()
+    logging.info("Received job " + repr(job))
     scheduler = Scheduler()
+    logging.debug("Created instance of scheduler")
     scheduler.schedule(job)
 
 if __name__ == '__main__':
