@@ -40,7 +40,7 @@ def get_mac_addr():
     time.sleep(1)
     output = proc.stdout.read()
     
-    for x in out.splitlines():
+    for x in output.splitlines():
         if x.find('HWaddr') != -1 and x.find('eth0') != -1:
             return x.split()[4]
     return ''

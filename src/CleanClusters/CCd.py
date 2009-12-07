@@ -17,21 +17,24 @@ import threading
 import select
 import random
 import time
+import logging
 
 LAST_JOB_FINISH             = time.time()
 CURRENTLY_PROCESSING_JOB    = False
 JOB_CHECK_SLEEP_INTVL       = 60    # 1 minute
-# IDLE_BEFORE_SLEEP_INTVL     = 240   # 4 minutes
+IDLE_BEFORE_SLEEP_INTVL     = 30   # 4 minutes
 SLEEP_REQ_ACCEPT_WAIT_INTVL = 240   # 4 minutes
-monitor                     = CCMonitor()
+monitor                     = None #CCMonitor()
 
 class CCd(SocketServer.StreamRequestHandler):
     def handle(self):
         data = self.rfile.readline().strip()
-        if data == "SLEEP":
-            self.sleep()
+        if data.startswith("SLEEP"):
+            global monitor
+            logging.debug('Received sleep confirmation')
+            monitor.sleep()
         else:
-            logging.error("CCd received malformed data! Check this!")
+            logging.error("CCd received malformed data! Check this: " + data)
 
         
 class ProcStdinFeeder (threading.Thread):
@@ -59,6 +62,7 @@ class CCexecd(SocketServer.StreamRequestHandler):
         CURRENTLY_PROCESSING_JOB = True
         try:
             command = self.rfile.readline().strip()
+            logging.info("Executing " + repr(command.split()))
             proc = subprocess.Popen(command.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
             ProcStdinFeeder(proc, self.rfile).start()
             while True:
@@ -77,7 +81,7 @@ class CCexecd(SocketServer.StreamRequestHandler):
     
 class CCMonitor(object):
     """This class monitor's the system for any jobs currently being run and issues a request to sleep when idle"""
-    
+    GMETRIC_PATH = '/usr/bin/gmetric'
     def __init__(self):
         self.last_sleep_metric = False
         self.can_sleep = False
@@ -85,16 +89,17 @@ class CCMonitor(object):
         if macaddr == '':
             logging.error("Could not retrieve mac address of machine")
         else:
-            subprocess.Popen("gmetric -n \"MACADDR\" -v \"" + macaddr + "\" -t \"string\"")
+            logging.info ("Executing: " + self.GMETRIC_PATH + " -n \"MACADDR\" -v \"" + macaddr + "\" -t \"string\"")
+            subprocess.Popen([self.GMETRIC_PATH, '-n', 'MACADDR', '-v', macaddr, '-t', 'string'])
             self.can_sleep = True
 
         
     def start(self):
         while True:
             if self.check_if_idle():
-                request_sleep()
+                self.request_sleep()
             else:
-                identify_no_sleep()            
+                self.identify_no_sleep()            
             time.sleep(JOB_CHECK_SLEEP_INTVL)  
             
     def check_if_idle(self):
@@ -104,34 +109,43 @@ class CCMonitor(object):
     
     def request_sleep(self):
         """Inform gmond that this node wants to go to sleep"""
-        subprocess.Popen("gmetric -n \"SLEEP_INTENT\" -v \"YES\" -t \"string\"")
+        logging.info("Executing: " + repr([self.GMETRIC_PATH, '-n', "SLEEP_INTENT", '-v', "YES", '-t', "string"]))
+        subprocess.Popen([self.GMETRIC_PATH, '-n', "SLEEP_INTENT", '-v', "YES", '-t', "string"])
         self.last_sleep_metric = True
     
     def identify_no_sleep(self):
         """Inform gmond that this node does not need to go to sleep"""
         if self.last_sleep_metric:
             return
-        subprocess.Popen("gmetric -n \"SLEEP_INTENT\" -v \"NO\" -t \"string\"")
+        logging.info("Executing: " + repr([self.GMETRIC_PATH, '-n', "SLEEP_INTENT", '-v', "NO", '-t', "string"]))
+        subprocess.Popen([self.GMETRIC_PATH, '-n', "SLEEP_INTENT", '-v', "NO", '-t', "string"])
         self.last_sleep_metric = False
         
     def sleep(self):
         try:
+            logging.debug('putting system to sleep')
             power_state = open('/sys/power/state', 'w')
-            if self.check_if_idle():
-                logging.debug("Node no longer idle")
-                power_state.close()
-                return
-            # power_state.write('mem')
+            logging.debug('opened power state file')
+#            if self.check_if_idle():
+#                logging.debug("Node no longer idle")
+#                power_state.close()
+#                return
+            logging.info('Going to sleep')
+#            power_state.write('mem')
             power_state.close()
         except:
             logging.exception("Could not go to sleep!")
     
 def main():
     common.ServiceLauncher(common.CCD_PORT, CCd).start()
+    logging.debug("CCexecd listening on " + str(common.CCD_EXEC_PORT))
     common.ServiceLauncher(common.CCD_EXEC_PORT, CCexecd).start()
+    global monitor
+    monitor = CCMonitor()
     monitor.start()
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     main()
 
