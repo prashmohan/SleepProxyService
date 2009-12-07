@@ -14,11 +14,13 @@ import optparse
 import math
 import threading
 import logging
+import common
+import time
 
 DEAD_WAIT_TIME  = 300 # seconds
 MIN_CPU_AVAIL   = 1200  # Mhz
 TIME_BTW_CONN   = 0.5 # seconds
-TIME_BTW_NODE_CHECK = 0.1 # seconds
+TIME_BTW_NODE_CHECK = 0 # seconds
 ACPI_MAX_WAKEUP_TIME = 10 # seconds
 CONN_MAX_RETRY_COUNT = math.ceil(ACPI_MAX_WAKEUP_TIME / TIME_BTW_CONN)
 
@@ -32,8 +34,7 @@ def parse_options():
     if not options.command or not options.instances:
         print parser.usage
         sys.exit(1)
-    job = Job(options.command, options.instances)
-    print job
+    job = Job(options.command, int(options.instances))
     return job
 
         
@@ -55,43 +56,61 @@ class Job(object):
         
 class Node(threading.Thread):
     def __init__(self, name, ip, mac, cpu_avail):
+        super(Node, self).__init__()
         self.name   = name
         self.ip     = ip
         self.mac    = mac
         self.retries = 0
-        self.sock   = None
+        self.sock   = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.cpu_avail = cpu_avail
         self.connected = False
         self.failed = False
-        super(Node, self).__init__()
+        self.started = False
+
+    def get_repr(self):
+        ret_str = "Node name: " + self.name + " IP: " + self.ip
+        if self.mac != "":
+            ret_str += " MAC: " + self.mac
+        return ret_str
         
+    def __str__(self):
+        return self.get_repr()
+
+    def __repr__(self):
+        return self.get_repr()
+
     def wakeup(self):
-        subprocess.Popen('wakeonlan ' + mac) 
+        if not self.mac == "":
+            subprocess.Popen('wakeonlan ' + self.mac) 
+            logging.info ("Waking up Node " + self.name)
+        else:
+            logging.info ("Node " + self.name + " does not have an associated mac address. Cannot be woken up")
         
     def connect(self):
-        if not self.sock:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         retries += 1
-        
         try:
-            self.sock.connect((self.ip, common.CLUSTER_STATE_SERVER_PORT))
+            logging.debug("Attempting to connect to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
+            self.sock.connect((self.ip, common.CCD_EXEC_PORT))
             self.connected = True
+            logging.info("Connected to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
         except:
-            logging.exception("Could not connect to %s:%d", (self.ip, common.CLUSTER_STATE_SERVER_PORT))
+            logging.exception("Could not connect to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
             raise
         
     def execute(self, job):
         """Try and execute a job on the node. Returns False if unsuccessful"""
         try:
-            sock.send(job.command)
+            logging.info("Sending " + job.command + " to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
+            self.sock.send(job.command)
         except:
             logging.exception("Could not send job command")
             
     def __del__(self):
         if self.sock:
             try:
-                self.sock.close
+                self.sock.close()
             except:
+                logging.exception("Could not close socket properly for some reason")
                 pass
                 
         super(Node, self).__del__()
@@ -124,7 +143,7 @@ class StdinFeeder(threading.Thread):
     
     def run(self):
         while True:
-            line = sys.stdin.readline()
+            line = raw_input("Insert input to program here: ")#sys.stdin.readline()
             for sock in sock_list:
                 try:
                     sock.send(line)
@@ -141,7 +160,6 @@ class Scheduler(object):
     sleep_nodes = []
     dead_nodes = []  
     overloaded_nodes = []
-    started = False
     
     def __init__(self):
         super(Scheduler, self).__init__()
@@ -166,8 +184,8 @@ class Scheduler(object):
                 buf += bytes
         except:
             err_msg = "Could not receive cluster state from local sleep proxy"
-            logging.error(err_msg)
-            raise Exception(err_msg)
+            logging.exception(err_msg)
+            raise
         finally:
             sock.close()
 
@@ -175,24 +193,29 @@ class Scheduler(object):
 
     def _sort_nodes(self):
         for cluster in self.cluster_state:
+            cluster = self.cluster_state[cluster]
             for host in cluster:
+                host_name = host
+                host = cluster[host]
                 ip = host['IP']
-                mac = host['mac']
-                idle = float(host['cpu_idle'])
-                cpu_num = int(host['cpu_num'])
-                cpu_speed = int(host['cpu_speed'])
+                mac = ''
+                if host.has_key('MACADDR'):
+                    mac = host['MACADDR'][0]
+                idle = float(host['cpu_idle'][0])
+                cpu_num = int(host['cpu_num'][0])
+                cpu_speed = int(host['cpu_speed'][0])
                 cpu_avail = idle * cpu_num * cpu_speed
                 node = Node(host, ip, mac, cpu_avail)                
-                if time.time() - host['last_heard'] > DEAD_WAIT_TIME and host['SLEEP_INTENT'] != 'YES':
+                if time.time() - host['last_heard'] > DEAD_WAIT_TIME and (not host.has_key('SLEEP_INTENT') or host['SLEEP_INTENT'] != 'YES'):
                     self.dead_nodes.append(node)
-                elif host['SLEEP_INTENT'] == 'YES':
+                elif host.has_key('SLEEP_INTENT') and host['SLEEP_INTENT'] == 'YES':
                     self.sleep_nodes.append(node)
                 elif node.cpu_avail < MIN_CPU_AVAIL:
                     self.overloaded_nodes.append(node)
                 else:
                     self.active_nodes.append(node)
         
-        active_nodes.sort(cpu_cmp)
+        self.active_nodes.sort(cpu_cmp)
     
     
     def _get_next_node(self):
@@ -219,12 +242,13 @@ class Scheduler(object):
             if not new_node:
                 logging.error ("No more nodes available for execution")
                 sys.exit(1)
-            node_list.append(new_node)
+            new_list.append(new_node)
+        return new_list
     
     def schedule(self, job):
         total_instances = job.instances
-        if total_instances > (len(active_nodes) + len(sleep_nodes)):
-            logger.error("Not enough nodes in cluster to execute job")
+        if total_instances > (len(self.active_nodes) + len(self.sleep_nodes)):
+            logging.error("Not enough nodes in cluster to execute job")
         
         selected_nodes= []
         while True:
@@ -271,8 +295,9 @@ class Scheduler(object):
 def main():
     job = parse_options()
     scheduler = Scheduler()
-    schduler.schedule(job)
+    scheduler.schedule(job)
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     main()
 
