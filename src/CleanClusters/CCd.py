@@ -83,6 +83,9 @@ class CCMonitor(object):
     """This class monitor's the system for any jobs currently being run and issues a request to sleep when idle"""
     GMETRIC_PATH = '/usr/bin/gmetric'
     def __init__(self):
+        self.enable_sleep = False
+        if len(sys.argv) > 1 and sys.argv[1] == "--sleep":
+            self.enable_sleep = True
         self.last_sleep_metric = False
         self.can_sleep = False
         macaddr = common.get_mac_addr()
@@ -103,7 +106,7 @@ class CCMonitor(object):
             time.sleep(JOB_CHECK_SLEEP_INTVL)  
             
     def check_if_idle(self):
-        if not CURRENTLY_PROCESSING_JOB and time.time() - LAST_JOB_FINISH > IDLE_BEFORE_SLEEP_INTVL and self.can_sleep:
+        if not CURRENTLY_PROCESSING_JOB and time.time() - LAST_JOB_FINISH > IDLE_BEFORE_SLEEP_INTVL and self.can_sleep and self.enable_sleep:
             return True
         return False  
     
