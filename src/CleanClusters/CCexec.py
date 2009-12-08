@@ -90,7 +90,7 @@ class Node(threading.Thread):
         self.retries += 1
         try:
             logging.debug("Attempting to connect to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
-            # self.sock.connect((self.ip, common.CCD_EXEC_PORT))
+            self.sock.connect((self.ip, common.CCD_EXEC_PORT))
             self.connected = True
             logging.info("Connected to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
         except:
@@ -101,7 +101,7 @@ class Node(threading.Thread):
         """Try and execute a job on the node. Returns False if unsuccessful"""
         try:
             logging.info("Sending " + job.command + " to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
-            # self.sock.send(job.command)
+            self.sock.send(job.command)
         except:
             logging.exception("Could not send job command")
             
@@ -148,8 +148,8 @@ class StdinFeeder(threading.Thread):
             line = raw_input("Insert input to program here: ")#sys.stdin.readline()
             for sock in sock_list:
                 try:
-                    # sock.send(line)
                     logging.debug ("Sending " + line)
+                    sock.send(line)                    
                 except:
                     logging.exception("Can no longer send data over " + repr(sock))
                     sock_list.remove(sock)
