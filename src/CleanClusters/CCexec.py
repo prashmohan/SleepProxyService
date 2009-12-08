@@ -101,7 +101,7 @@ class Node(threading.Thread):
         """Try and execute a job on the node. Returns False if unsuccessful"""
         try:
             logging.info("Sending " + job.command + " to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
-            self.sock.send(job.command)
+            self.sock.send(job.command + '\n')
         except:
             logging.exception("Could not send job command")
             
