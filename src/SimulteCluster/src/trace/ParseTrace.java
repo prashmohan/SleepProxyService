@@ -8,16 +8,21 @@ public class ParseTrace {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		TraceList x = new TraceList("/Users/himanshu/Downloads/anon_jobs_gwf-1/grid5000_clean_trace.log",5000,"gwf");
+		//TraceList x = new TraceList("/Users/himanshu/Downloads/anon_jobs_gwf-1/grid5000_clean_trace.log",5000,"gwf");
+		TraceList x = new TraceList("/Users/himanshu/Desktop/20090826",30000,"torque");
 		//TraceList x = new TraceList("/Users/himanshu/Downloads/HPC2N-2002-0",5000,"muai");
 		// TraceList(filename,heaplimit,traceformat)
-		//anon_jobs is in gwf format and HPC@N-2002-0 is in muai format.
-		for(int i=0;i<100;i++){
+		//anon_jobs is in gwf format, HPC@N-2002-0 is in muai format; use "torque" for consolidated torque logs .
+		for(int i=0;i<3000;i++){
 			System.out.println("SubmitTime:"+x.getTracelist().get(i).getSubmitTime());
+	//		System.out.println("DispatchTime:"+x.getTracelist().get(i).dispatchTime);
 			System.out.println("StartTime:"+x.getTracelist().get(i).getStartTime());
+			System.out.println("EndTime:"+x.getTracelist().get(i).endTime);
 			System.out.println("JobId:"+x.getTracelist().get(i).getJobId());
+	//		System.out.println("Nodes:"+x.getTracelist().get(i).nodes.get(0));
 			System.out.println("nproc:"+x.getTracelist().get(i).getNodesRequired());
-			System.out.println("**********************");
+	//		System.out.println("cpuUse:"+x.getTracelist().get(i).cpuUse);
+			System.out.println("*"+i+"*");
 		}
 	}
 
