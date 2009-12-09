@@ -16,6 +16,7 @@ import threading
 import logging
 import common
 import time
+import select
 
 DEAD_WAIT_TIME  = 300 # seconds
 MIN_CPU_AVAIL   = 1200  # Mhz
@@ -100,7 +101,7 @@ class Node(threading.Thread):
     def execute(self, job):
         """Try and execute a job on the node. Returns False if unsuccessful"""
         try:
-            logging.info("Sending " + job.command + " to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
+            logging.info(time.ctime() + ": Sending " + job.command + " to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
             self.sock.send(job.command + '\n')
         except:
             logging.exception("Could not send job command")
@@ -145,7 +146,7 @@ class StdinFeeder(threading.Thread):
     
     def run(self):
         while True:
-            line = raw_input("Insert input to program here: ")#sys.stdin.readline()
+            line = sys.stdin.readline()
             for sock in sock_list:
                 try:
                     logging.debug ("Sending " + line)
@@ -155,7 +156,10 @@ class StdinFeeder(threading.Thread):
                     sock_list.remove(sock)
             
             if len(sock_list) == 0:
-                break        
+                break
+                
+    def cancel(self):
+        self.sock_list = []
         
 class Scheduler(object):
     """This is the scheduler which will run and allocate jobs on the various nodes in the cluster"""
@@ -289,16 +293,26 @@ class Scheduler(object):
         StdinFeeder(sock_list).start()
         
         while True:
-            line = raw_input()
-            reader, writer, errer = select.select([read_sock_list], [], [], 60)
+            if not read_sock_list:
+                break
+            reader, writer, errer = select.select(read_sock_list, [], [], 60)
             for sock in reader:
                 data = ''
+                sockname = sock.getsockname()[0] + ':' + str(sock.getsockname()[1])
                 while True:
-                    buf = sock.recv(4096)
-                    if not buf:
+                    buf = sock.recv(1024)
+                    if buf == '':
+                        continue
+                    elif not buf:
+                         break
+                    elif buf.find("Finished execution") != -1:
+                        sock.close()
+                        data += buf
+                        read_sock_list.remove(sock)
                         break
                     data += buf
-                print '[From ' + sock.getsockname[0] + ':' + str(sock.getsockname[1]) + '] ', data
+                print time.ctime() + ': [' + sockname + '] \n' + data
+        sys.exit(0)
                 
 
                         

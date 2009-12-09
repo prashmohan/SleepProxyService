@@ -66,18 +66,27 @@ class CCexecd(SocketServer.StreamRequestHandler):
             proc = subprocess.Popen(command.split(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
             ProcStdinFeeder(proc, self.rfile).start()
             while True:
-                output = proc.stdout.read(100)
-                if output == "":
+                output = ''
+                output_read = False
+                if proc.poll() != None:
+                    output = proc.stdout.read()
+                    output_read = True
+                else:
+                    output = proc.stdout.readline()
+                if output == "" and not output_read:
+                    time.sleep(1)
+                    continue
+                self.request.send(output)
+                if output_read:
                     break
-                self.wfile.write(output)
-            self.wfile.flush()
+            self.request.send('Finished execution')
         except:
             logging.exception("Could not complete execution of job")
-            self.wfile.write("ERROR")
-            self.wfile.flush()
         finally:
             CURRENTLY_PROCESSING_JOB = False
             LAST_JOB_FINISH = time.time()   # also log failed job, it was an attempt after all
+            print 'Closing socket'
+            self.request.close()
     
 class CCMonitor(object):
     """This class monitor's the system for any jobs currently being run and issues a request to sleep when idle"""
