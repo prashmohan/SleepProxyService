@@ -15,22 +15,26 @@ import trace.TraceJob;
 public class SimpleScheduler implements Scheduler {
 
 	protected List<TraceJob> jobs;
+	protected List<SimulatedJob> queuedJobs;
 	protected List<Node> nodes;
 	protected int generationTime;
 	protected int lastScheduledTime;
 	protected int timeDifference;
 	protected NodeProxy nodeProxy;
+	protected int numJobs;
 
 	public SimpleScheduler(List<TraceJob> jobs, List<Node> nodes,
 			int generationTime) {
 		this.jobs = new ArrayList<TraceJob>(jobs);
+		numJobs = jobs.size();
+		queuedJobs =  new ArrayList<SimulatedJob>();
 		this.nodes = nodes;
 		nodeProxy = new SimpleNodeProxy(nodes);
 		this.generationTime = generationTime;
 		this.lastScheduledTime = 0;
 
 		if (jobs.size() > 0) {
-			timeDifference = jobs.get(0).getSubmitTime();
+			timeDifference = jobs.get(0).getStartTime();
 		}
 	}
 
@@ -41,33 +45,28 @@ public class SimpleScheduler implements Scheduler {
 		}
 		lastScheduledTime = time;
 
-		int numJobsCanIssue = 0;
-		while (numJobsCanIssue + 1 <= jobs.size()
-				&& jobs.get(numJobsCanIssue).getSubmitTime() < (time + timeDifference)) {
-			numJobsCanIssue++;
+		if (queuedJobs.size() > 0) {
+			System.out.print("");
 		}
-
-		int numNodesRequired = 0;
-		for (int i = 0; i < numJobsCanIssue; i++) {
-			numNodesRequired += jobs.get(i).getNodesRequired();
+		
+		while (jobs.size() > 0 && jobs.get(0).getStartTime() < (time + timeDifference)) {
+			TraceJob job = jobs.remove(0);
+			for (int i = 0; i < job.getProcsRequired(); i++) {
+				SimulatedJob simJob = new SimulatedJob(time, job);
+				queuedJobs.add(simJob);
+			}
 		}
-
+		
 		List<Node> nodesAvailable = nodeProxy
-				.getAvailableNodes(numNodesRequired, time);
+				.getAvailableNodes(queuedJobs.size(), time);
 		
 		List<Command> commands = new ArrayList<Command>();
 		
-		while (jobs.size() > 0 && numJobsCanIssue > 0
-				&& nodesAvailable.size() >= jobs.get(0).getNodesRequired()) {
-			TraceJob job = jobs.remove(0);
-			numJobsCanIssue--;
-			for (int i = 0; i < job.getNodesRequired(); i++) {
-				SimulatedJob simJob = new SimulatedJob(job);
-				Node node = nodesAvailable.remove(0);
-				node.incNumScheduledJobs();
-				ScheduleCommand com = new ScheduleCommand(node, simJob, time);
-				commands.add(com);
-			}
+		while (queuedJobs.size() > 0 && nodesAvailable.size() > 0) {
+			SimulatedJob job = queuedJobs.remove(0);
+			Node node = nodesAvailable.remove(0);
+			ScheduleCommand com = new ScheduleCommand(node, job, time);
+			commands.add(com);
 		}
 		
 		commands.addAll(nodeProxy.getCommands(time));
@@ -76,11 +75,16 @@ public class SimpleScheduler implements Scheduler {
 
 	@Override
 	public boolean isFinished() {
-		return jobs.isEmpty();
+		return jobs.isEmpty() && queuedJobs.isEmpty();
 	}
 
 	@Override
 	public List<Node> getNodes() {
 		return nodes;
+	}
+
+	@Override
+	public int numJobs() {
+		return numJobs;
 	}
 }

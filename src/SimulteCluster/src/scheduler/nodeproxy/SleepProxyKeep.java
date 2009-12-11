@@ -8,7 +8,7 @@ import scheduler.command.WakeCommand;
 
 import node.Node;
 
-public class SleepProxy implements NodeProxy {
+public class SleepProxyKeep implements NodeProxy {
 
 	private List<Node> nodes;
 	private List<Node> sleepingNodes;
@@ -18,9 +18,11 @@ public class SleepProxy implements NodeProxy {
 	
 	private List<Command> commands;
 	boolean haveEnough;
+	int numKeep;
 	
-	public SleepProxy(List<Node> nodes) {
+	public SleepProxyKeep(List<Node> nodes, double perKeep) {
 		this.nodes = nodes;
+		numKeep = (int)(perKeep * nodes.size());
 		wakingNodes = new ArrayList<Node>();
 		sleepingNodes = new ArrayList<Node>();
 		onNodes = new ArrayList<Node>();
@@ -51,6 +53,9 @@ public class SleepProxy implements NodeProxy {
 		List<Command> commands = new ArrayList<Command>();
 		List<Node> nodesPutSleep = new ArrayList<Node>();
 		for (Node node : availableNodes) {
+			if (availableNodes.size() < numKeep) {
+				break;
+			}
 			if (node.isOn() && node.getNumberOfJobs(time) == 0) {
 				commands.add(new SleepCommand(node, time));
 				nodesPutSleep.add(node);
@@ -68,7 +73,9 @@ public class SleepProxy implements NodeProxy {
 
 		updateWakingNodes();
 		updateAvailableNodes(time);
-
+		
+		numNodesRequired += numKeep;
+		
 		if (numNodesRequired == 0) {
 			return new ArrayList<Node>();
 		}

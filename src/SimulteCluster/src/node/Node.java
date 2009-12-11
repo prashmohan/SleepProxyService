@@ -7,18 +7,24 @@ import job.SimulatedJob;
 public interface Node {
 	
 	public String getNodeId();
-	public void setState(PowerState s);
-	public PowerState getState();
-	int getNumberOfJobs(int time);
-	public void addJob(SimulatedJob job);
-	public void incNumScheduledJobs();
-	public List<SimulatedJob> getJobs();
 	public int getTimeToSleep();
 	public int getTimeToWake();
+	
+	public void setState(PowerState s);
+
+	public PowerState getState();
+	public List<SimulatedJob> getJobs();
+	public int getNumberOfJobs(int time);
+	public int getEnergyUsed(int time);
 	
 	public boolean isOn();
 	public boolean isSleeping();
 
+	public void addJob(SimulatedJob job);
+	public void incUpTime();
+	
+	public int getUpTime();
+	
 	enum PowerState {
 		ON,
 		OFF,

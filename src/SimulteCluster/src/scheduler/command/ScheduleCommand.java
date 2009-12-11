@@ -16,21 +16,20 @@ public class ScheduleCommand extends Command {
 
 	@Override
 	public void execute(List<SimulatedJob> jobStatus, int time) {
-		List<SimulatedJob> nodeJobs = node.getJobs();
-		nodeJobs.add(job);
-		jobStatus.add(job);
+		assert node.getNumberOfJobs(time) == 0;
 		node.addJob(job);
+		jobStatus.add(job);
 		job.start(time);
 	}
 
 	@Override
 	public boolean isFinished(int time) {
-		return time - startTime > 4;
+		return time - startTime > 0;
 	}
 
 	@Override
 	public boolean shouldExecute(int time) {
-		return time - startTime == 4;
+		return time - startTime == 0;
 	}
 	
 	public String toString() {
