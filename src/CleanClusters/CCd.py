@@ -20,6 +20,7 @@ import time
 import logging
 
 LAST_JOB_FINISH             = time.time()
+LAST_WAKEUP                 = time.time()
 CURRENTLY_PROCESSING_JOB    = False
 JOB_CHECK_SLEEP_INTVL       = 60    # 1 minute
 IDLE_BEFORE_SLEEP_INTVL     = 30   # 4 minutes
@@ -115,7 +116,11 @@ class CCMonitor(object):
             time.sleep(JOB_CHECK_SLEEP_INTVL)  
             
     def check_if_idle(self):
-        if not CURRENTLY_PROCESSING_JOB and time.time() - LAST_JOB_FINISH > IDLE_BEFORE_SLEEP_INTVL and self.can_sleep and self.enable_sleep:
+        if not CURRENTLY_PROCESSING_JOB and \
+            time.time() - LAST_JOB_FINISH > IDLE_BEFORE_SLEEP_INTVL and \
+            time.time() - LAST_WAKEUP > IDLE_BEFORE_SLEEP_INTVL and\
+            self.can_sleep and \
+            self.enable_sleep:
             return True
         return False  
     
@@ -127,7 +132,7 @@ class CCMonitor(object):
     
     def identify_no_sleep(self):
         """Inform gmond that this node does not need to go to sleep"""
-        if self.last_sleep_metric:
+        if not self.last_sleep_metric:
             return
         logging.info("Executing: " + repr([self.GMETRIC_PATH, '-n', "SLEEP_INTENT", '-v', "NO", '-t', "string"]))
         subprocess.Popen([self.GMETRIC_PATH, '-n', "SLEEP_INTENT", '-v', "NO", '-t', "string"])
@@ -138,15 +143,12 @@ class CCMonitor(object):
             logging.debug('putting system to sleep')
             power_state = open('/sys/power/state', 'w')
             logging.debug('opened power state file')
-#            if self.check_if_idle():
-#                logging.debug("Node no longer idle")
-#                power_state.close()
-#                return
             logging.info('Going to sleep')
-#            power_state.write('mem')
+            power_state.write('mem')
             power_state.close()
         except:
             logging.exception("Could not go to sleep!")
+        LAST_WAKEUP = time.time()
     
 def main():
     common.ServiceLauncher(common.CCD_PORT, CCd).start()
