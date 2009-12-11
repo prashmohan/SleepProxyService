@@ -7,21 +7,22 @@ import job.SimulatedJob;
 
 public class SimpleNode implements Node {
 
-	PowerState state;
-	final String nodeId;
-	boolean isAvailable;
-	List<SimulatedJob> jobs;
-	int timeToSleep, timeToWake;
-	int numScheduledJobs;
+	private PowerState state;
+	private final String nodeId;
+	private List<SimulatedJob> jobs;
+	private int upTime;
 	
-	public SimpleNode(String nodeId, int timeToSleep, int timeToWake) {
+	final private int timeToSleep, timeToWake;
+	final private int numProcs;
+	
+	public SimpleNode(String nodeId, int timeToSleep, int timeToWake, int numProcs) {
 		this.nodeId = nodeId;
 		this.timeToSleep = timeToSleep;
 		this.timeToWake = timeToWake;
+		this.numProcs = numProcs;
 		state = PowerState.ON;
-		isAvailable = true;
-		numScheduledJobs = 0;
 		jobs = new ArrayList<SimulatedJob>();
+		upTime = 0;
 	}
 
 	@Override
@@ -54,11 +55,10 @@ public class SimpleNode implements Node {
 		List<SimulatedJob> finishedJobs = new ArrayList<SimulatedJob>();
 		for (SimulatedJob job : jobs) {
 			if (job.isFinished(time)) {
-				
+				finishedJobs.add(job);
 			}
 		}
-		jobs.removeAll(finishedJobs);
-		return jobs.size() + numScheduledJobs;
+		return jobs.size() - finishedJobs.size();
 	}
 
 	@Override
@@ -74,7 +74,6 @@ public class SimpleNode implements Node {
 	@Override
 	public void addJob(SimulatedJob job) {
 		jobs.add(job);
-		numScheduledJobs--;
 	}
 
 	@Override
@@ -83,7 +82,27 @@ public class SimpleNode implements Node {
 	}
 
 	@Override
-	public void incNumScheduledJobs() {
-		numScheduledJobs++;
+	public int getEnergyUsed(int time) {
+		switch(state) {
+		case OFF:
+			return 0;
+		case ON:
+			return 50;
+		case SLEEP:
+			return 10;
+		case WAKING:
+			return 50;		
+		}
+		return -1;
+	}
+	
+	@Override
+	public int getUpTime() {
+		return upTime;
+	}
+
+	@Override
+	public void incUpTime() {
+		upTime++;
 	}
 }
