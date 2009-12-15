@@ -25,15 +25,32 @@ import job.SimulatedJob;
 
 public class Simulator {
 
+	// scheduler used, it should give commands which are processed
 	private Scheduler scheduler;
+	
+	// current jobs that are being processed on the nodes
+	private List<SimulatedJob> jobStatus;
+	
+	// commands that have been issued, but the time is not great enough
+	// to simulate them
+	private List<Command> queuedCommands;
+	
+	// list of jobs which are finished. each job contains information 
+	// its runtime
+	private List<SimulatedJob> allFinishedJobs;
+	
+	// prints to a debug file
+	private PrintStream debug;
+	
+	// logs the number of nodes running at time n
+	private PrintStream nodesUp;
+
+	// stores maximum number of nodes up at any time since the last
+	// output to PrintStream nodesUp
+	int maxNodes;
+	
 	private int time;
 	private List<Node> nodes;
-	private List<SimulatedJob> jobStatus;
-	private List<Command> queuedCommands;
-	private List<SimulatedJob> allFinishedJobs;
-	PrintStream debug;
-	PrintStream nodesup;
-	int maxNodes;
 	
 	public Simulator(Scheduler scheduler) {
 		this.scheduler = scheduler;
@@ -47,21 +64,25 @@ public class Simulator {
 		allFinishedJobs = new ArrayList<SimulatedJob>();
 		time = 0;
 		maxNodes = 0;
+		
 		try {
 			debug = new PrintStream("debug");
-			nodesup = new PrintStream("nodesup");
+			nodesUp = new PrintStream("nodesup");
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException("Cannot open output files.");
 		}
+	}
+	
+	public void cleanUp() {
+		debug.close();
+		nodesUp.close();	
 	}
 
 	public void simulateUntilFinish() {
 		while(!finished()) {
 			simulate();
 		}
-		debug.close();
-		nodesup.close();
+		cleanUp();
 	}
 	
 	public void printNodesUp(int time) {
@@ -71,40 +92,52 @@ public class Simulator {
 				numNodes++;
 			}
 		}
+		// update maxNodes
 		maxNodes = Math.max(numNodes, maxNodes);
+		
+		// output to PrintStream nodesup the maximum nodes up during the
+		// last n seconds. currently n = 60, but this can be changed
 		if (time % 60 == 0) {
-			nodesup.println(time + " " + numNodes);
+			nodesUp.println(time + " " + numNodes);
 			maxNodes = 0;
 		}
 	}
 	
 	private void simulate() {
-		printNodesUp(time);
-		processQueuedCommands();
-		processJobsOnNodes();
-//		if (time == 2571791 || time == 5931344)
-	//		System.out.println("blah");
 		
-		
-		time++;
 		List<Command> commands = scheduler.getCommands(time);
 		if (commands != null) {
 			queuedCommands.addAll(commands);
 		}
+		
+		// see if any commands can be issued, and issue them
+		processQueuedCommands();
+		// update the jobs on each node. if a job is finished, then
+		// it will be removed
+		processJobsOnNodes();		
+		
+		incTime();
+		
+		printNodesUp(time);
+	}
+	
+	private void incTime() {
+		time++;
 	}
 
 	private void processJobsOnNodes() {
-		boolean allJobsFinished = true;
+		//update jobs on each node
 		for(Node node : nodes) {
 			if (!node.isOn()) 
 				continue;
 			
 			node.incUpTime();
+			// get all active jobs on node
 			List<SimulatedJob> nodeJobs = node.getJobs();
 			if (nodeJobs.size() == 0) 
 				continue;
-			allJobsFinished = false;
 			
+			// find all finished jobs on the node
 			ArrayList<SimulatedJob> finishedJobs = new ArrayList<SimulatedJob>();
 			for (SimulatedJob job : nodeJobs) {
 				if(job.isFinished(time)) {
@@ -112,18 +145,21 @@ public class Simulator {
 				}
 			}
 			
+			// remove the finished jobs from the appropriate list
+			// add the finished jobs to the allFinishedJobs list
 			for (SimulatedJob finishedJob : finishedJobs) {
 				nodeJobs.remove(finishedJob);
 				jobStatus.remove(finishedJob);
 				allFinishedJobs.add(finishedJob);
+				
 				debug.println("" + time + ":Finish (" + node.getNodeId() + ")" + finishedJob.getJobId());
 			}
 		}
-		assert !allJobsFinished || jobStatus.isEmpty();
 	}
 
 	private void processQueuedCommands() {
 		List<Command> finishedCommands = new ArrayList<Command>();
+		// go through all of the queued commands
 		for (Command command : queuedCommands) {
 			if (command.shouldExecute(time)) {
 				debug.println("" + time + ":" + command);
@@ -252,38 +288,48 @@ public class Simulator {
 		}
 	}
 	
-
-	public static TraceList runGwf(String traceFile) {
-		TraceList trace = new TraceList(traceFile, 100000,"gwf");
+	// Calls to retrieve a list of jobs from a trace
+	public static TraceList runGwf(String traceFile, int jobSize, int nodeSize) {
+		TraceList trace = new TraceList(traceFile, jobSize,"gwf");
 		System.out.println("Trace read in from " + traceFile);
-		trace.getNodeList(5000);
+		trace.getNodeList(nodeSize);
 		return trace;
 	} 
 	
-	public static TraceList runMaui(String traceFile) {
-		TraceList trace = new TraceList(traceFile, 200000, "maui");
+	public static TraceList runMaui(String traceFile, int size) {
+		TraceList trace = new TraceList(traceFile, size, "muai");
 		return trace;
 	}
 	
-	public static void main(String args[]) {
+	public static TraceList runTorque(String traceFile, int size) {
+		TraceList trace = new TraceList(traceFile, 200, "torque");
+		return trace;
+	}
+	
+	public static void main(String args[]) throws FileNotFoundException {
 		if (args.length < 1) {
 			System.out.println("java Simulator [sample load file]");
 		}
 		
-		//String traceFile = "traces/anon_jobs.gwf";
-		String traceFile = "traces/grid5000_clean_trace.log";
+		//String traceFile = "traces/grid5000_clean_trace.log";
+		//String traceFile = "traces/HPC2N";
 		
-		TraceList trace = runGwf(traceFile);
+		//String traceFile = "traces/nordu.gwf";
+		//TraceList trace = runGwf(traceFile);
+		
+		String traceFile = "traces/nordu.gwf";
+		TraceList trace = runTorque(traceFile,10);
 		
 		ArrayList<TraceJob> tl = trace.getTraceList();
-		tl.remove(0);
 		ArrayList<Node> nl = trace.getNodeList();
 		Scheduler scheduler = new SleepScheduler(tl, nl, 1);
+		
 		System.out.println("Simulating " + tl.size() + " jobs on " + nl.size() + " nodes");
 		
 		Simulator simulator = new Simulator(scheduler);
 		simulator.simulateUntilFinish();
 		System.out.println("Simulation done");
 		simulator.outputInfo();
+		System.out.println("Output done");
 	}
 }

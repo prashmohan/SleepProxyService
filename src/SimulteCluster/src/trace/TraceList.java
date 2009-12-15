@@ -208,7 +208,7 @@ public class TraceList {
 			int placeholder = 0;
 			while ((readLine = d.readLine()) != null & heaplimit < n) {
 				if (!(readLine.startsWith("#") || readLine.equals(""))) {
-					String[] x = readLine.trim().split(";");
+					String[] x = readLine.trim().split("[;\\s]");
 					if (x[1].equals("S")) {
 						hash2.put(new Integer(placeholder), x[2]);
 						placeholder++;

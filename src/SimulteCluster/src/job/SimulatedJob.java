@@ -50,6 +50,6 @@ public class SimulatedJob {
 	public String getTimeOfDay() {
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeInMillis((long) traceJob.getStartTime() * 100);
-		return new SimpleDateFormat("hh").format(cal.getTime());
+		return new SimpleDateFormat("HH").format(cal.getTime());
 	}
 }
