@@ -8,13 +8,13 @@ import trace.TraceJob;
 public class SimulatedJob {
  
 	// the job in the trace this simulated job was based on
-	private TraceJob traceJob;
+	protected TraceJob traceJob;
 
 	// time the scheduler submitted job in the simulator
 	private int submitTime;
 	
 	// time the job started executing on a node
-	private int startTime;
+	protected int startTime;
 	
 	// time job finished
 	private int endTime;

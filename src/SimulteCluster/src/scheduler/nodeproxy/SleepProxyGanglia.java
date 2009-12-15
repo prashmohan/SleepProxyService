@@ -69,7 +69,7 @@ public class SleepProxyGanglia implements NodeProxy {
 		return returnCommands;
 	}
 
-	public List<Command> getSleepCommands(int time) {
+	private List<Command> getSleepCommands(int time) {
 		List<Command> commands = new ArrayList<Command>();
 		List<Node> nodesPutSleep = new ArrayList<Node>();
 		// the available nodes are ones which are not being utilized
@@ -123,7 +123,7 @@ public class SleepProxyGanglia implements NodeProxy {
 		return returnNodes;
 	}
 
-	public void addWakeCommands(int numNodesToWake, int time) {
+	private void addWakeCommands(int numNodesToWake, int time) {
 		if (numNodesToWake <= 0) {
 			return;
 		}

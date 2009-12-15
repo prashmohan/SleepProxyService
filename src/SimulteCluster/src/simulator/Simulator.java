@@ -346,11 +346,11 @@ public class Simulator {
 		TraceList trace = runGwf(traceFile, 200000, 400);
 		
 		//String traceFile = "traces/torque/20090901";
-		//TraceList trace = runTorque(traceFile, 100);
+		//TraceList trace = runTorque(traceFile, 10000);
 		
 		ArrayList<TraceJob> tl = trace.getTraceList();
 		ArrayList<Node> nl = trace.getNodeList();
-		Scheduler scheduler = new SimpleScheduler(tl, new SleepProxyKeepAvailable(nl, .01), 1);
+		Scheduler scheduler = new SimpleScheduler(tl, new SleepProxy(nl), 1);
 		
 		System.out.println("Simulating " + tl.size() + " jobs on " + nl.size() + " nodes");
 		
