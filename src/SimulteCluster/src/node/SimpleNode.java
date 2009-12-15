@@ -10,16 +10,18 @@ public class SimpleNode implements Node {
 	private PowerState state;
 	private final String nodeId;
 	private List<SimulatedJob> jobs;
+	// number of seconds this node has been on
 	private int upTime;
 	
 	final private int timeToSleep, timeToWake;
-	final private int numProcs;
+	// should somehow be added, but currently each node is assumed to have 1 processer
+	//final private int numProcs;
 	
 	public SimpleNode(String nodeId, int timeToSleep, int timeToWake, int numProcs) {
 		this.nodeId = nodeId;
 		this.timeToSleep = timeToSleep;
 		this.timeToWake = timeToWake;
-		this.numProcs = numProcs;
+		//this.numProcs = numProcs;
 		state = PowerState.ON;
 		jobs = new ArrayList<SimulatedJob>();
 		upTime = 0;
@@ -52,6 +54,9 @@ public class SimpleNode implements Node {
 
 	@Override
 	public int getNumberOfJobs(int time) {
+		// want to only count non-finished jobs, but cannot remove
+		// the finished jobs from the list since this needs to be done
+		// by the simulator.
 		List<SimulatedJob> finishedJobs = new ArrayList<SimulatedJob>();
 		for (SimulatedJob job : jobs) {
 			if (job.isFinished(time)) {
@@ -102,7 +107,7 @@ public class SimpleNode implements Node {
 	}
 
 	@Override
-	public void incUpTime() {
-		upTime++;
+	public void incUpTime(int time) {
+		upTime += time;
 	}
 }

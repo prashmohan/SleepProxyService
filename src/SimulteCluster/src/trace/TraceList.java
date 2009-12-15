@@ -3,6 +3,7 @@ package trace;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -198,20 +199,18 @@ public class TraceList {
 	private void ParseTorque(String filename, int n) {
 		File file = new File(filename);
 		FileInputStream fis = null;
-		HashMap<String, TraceJob> hash = new HashMap<String, TraceJob>();
-		HashMap<Integer, String> hash2 = new HashMap<Integer, String>();
+		Hashtable<String, TraceJob> hash = new Hashtable<String, TraceJob>();
+		Hashtable<Integer, String> hash2 = new Hashtable<Integer, String>();
 		try {
 			fis = new FileInputStream(file);
 			BufferedReader d = new BufferedReader(new InputStreamReader(fis));
 			String readLine;
 			int heaplimit = 0;
-			int placeholder = 0;
 			while ((readLine = d.readLine()) != null & heaplimit < n) {
 				if (!(readLine.startsWith("#") || readLine.equals(""))) {
-					String[] x = readLine.trim().split("[;\\s]");
+					String[] x = readLine.trim().split(";");
 					if (x[1].equals("S")) {
-						hash2.put(new Integer(placeholder), x[2]);
-						placeholder++;
+
 					} else if (x[1].equals("E")) {
 						TraceJob temp = new TraceJob();
 						temp.jobId = x[2];
@@ -229,7 +228,7 @@ public class TraceList {
 								y[7] = value[1];// start time
 							} else if (value[0].equals("exec_host")) {
 								y[8] = value[1];// list of node_name/no_of_cpu
-								// assigned
+												// assigned
 							} else if (value[0].equals("end")) {
 								y[15] = value[1];// end time
 							} else if (value[0]
@@ -270,19 +269,16 @@ public class TraceList {
 								&& temp.startTime >= 0
 								&& temp.endTime >= temp.startTime) {
 
-							hash.put(temp.jobId, temp);
+							tracelist.add(temp);
 							heaplimit++;
+
 						}
+
 					}
+
 				}
 			}
-			for (int i = 0; i < heaplimit; i++) {
-				if (hash2.containsKey(new Integer(i))) {
-					if (hash.containsKey(hash2.get(new Integer(i)))) {
-						tracelist.add(hash.get(hash2.get(new Integer(i))));
-					}
-				}
-			}
+
 			fis.close();
 			d.close();
 		} catch (FileNotFoundException e) {

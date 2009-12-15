@@ -12,6 +12,7 @@ public class SleepScheduler extends SimpleScheduler {
 	public SleepScheduler(List<TraceJob> jobs, List<Node> nodes,
 			int generationTime) {
 		super(jobs, nodes, generationTime);
+		// change the node proxy to the SleepProxy
 		nodeProxy = new SleepProxy(this.nodes);
 	}
 }

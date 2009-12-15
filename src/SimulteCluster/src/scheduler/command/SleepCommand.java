@@ -16,6 +16,7 @@ public class SleepCommand extends Command {
 
 	@Override
 	public void execute(List<SimulatedJob> jobStatus, int time) {
+		// should only put to sleep nodes without any jobs
 		assert(node.getJobs().isEmpty());
 		node.setState(PowerState.SLEEP);
 	}

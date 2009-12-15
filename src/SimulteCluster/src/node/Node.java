@@ -15,13 +15,17 @@ public interface Node {
 	public PowerState getState();
 	public List<SimulatedJob> getJobs();
 	public int getNumberOfJobs(int time);
+	 
+	// get the energy used in watts
 	public int getEnergyUsed(int time);
 	
 	public boolean isOn();
 	public boolean isSleeping();
 
+	// add a job to the list of jobs running on this node
 	public void addJob(SimulatedJob job);
-	public void incUpTime();
+	// increment the time this node is on
+	public void incUpTime(int time);
 	
 	public int getUpTime();
 	

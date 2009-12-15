@@ -3,10 +3,7 @@ package trace;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TraceJob implements Comparable{
-	//Raw Job Trace
-	//ArrayList<String> list = new ArrayList<String>(); 
-	
+public class TraceJob implements Comparable<TraceJob>{
 	//Job ID
 	String jobId; 
 	
@@ -67,11 +64,7 @@ public class TraceJob implements Comparable{
 	}
 	
 	@Override
-	public int compareTo(Object o) {
-		if (! (o instanceof TraceJob)) {
-			throw new ClassCastException();
-		}
-		TraceJob job = (TraceJob) o;
+	public int compareTo(TraceJob job) {
 		if (job.startTime < startTime) {
 			return 1;
 		} else if (job.startTime == startTime){
@@ -82,6 +75,6 @@ public class TraceJob implements Comparable{
 	}
 	
 	public String toString() {
-		return "<" + jobId + ":" + startTime + ">"; 
+		return "<Job " + jobId + ":time " + startTime + ">"; 
 	}
 }
