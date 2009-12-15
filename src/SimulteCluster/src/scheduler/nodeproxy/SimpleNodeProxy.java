@@ -37,4 +37,9 @@ public class SimpleNodeProxy implements NodeProxy {
 		return new ArrayList<Command>();
 	}
 
+	@Override
+	public List<Node> getNodes() {
+		return nodes;
+	}
+
 }

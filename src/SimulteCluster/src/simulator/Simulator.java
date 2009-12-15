@@ -9,9 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 import node.Node;
-import scheduler.SleepScheduler;
+import scheduler.SimpleScheduler;
 import scheduler.Scheduler;
 import scheduler.command.Command;
+import scheduler.nodeproxy.NodeProxy;
+import scheduler.nodeproxy.SimpleNodeProxy;
+import scheduler.nodeproxy.SleepProxy;
 import trace.TraceJob;
 import trace.TraceList;
 import job.SimulatedJob;
@@ -121,10 +124,12 @@ public class Simulator {
 	private void processJobsOnNodes() {
 		//update jobs on each node
 		for(Node node : nodes) {
+			// increment uptime if node is waking up or is on
+			node.updateStats(time, 1);
+			
 			if (!node.isOn()) 
 				continue;
 			
-			node.incUpTime(1);
 			// get all active jobs on node
 			List<SimulatedJob> nodeJobs = node.getJobs();
 			if (nodeJobs.size() == 0) 
@@ -285,6 +290,13 @@ public class Simulator {
 			ps.println("Average uptime per node (sec): " + avgUptime);
 			ps.println("Avg Inc TTC (sec): " + avgIncTTC);
 			ps.println("Avg Inc TTC (%): " + avgPerIncTTC);
+			double totalEnergy = 0;
+			for (Node node : nodes) {
+				totalEnergy +=  node.getTotalEnergyUsed();
+			}
+			//convert from W * sec to kW * hr
+			totalEnergy /= 1000 * 3600;
+			ps.println("Total energy (kW * hr): " + totalEnergy);
 			
 			ps.close();
 			
@@ -328,15 +340,15 @@ public class Simulator {
 		//String traceFile = "traces/grid5000_clean_trace.log";
 		//String traceFile = "traces/HPC2N";
 		
-		//String traceFile = "traces/anon_jobs.gwf";
-		//TraceList trace = runGwf(traceFile, 200000, 400);
+		String traceFile = "traces/anon_jobs.gwf";
+		TraceList trace = runGwf(traceFile, 200000, 400);
 		
-		String traceFile = "traces/torque/20090901";
-		TraceList trace = runTorque(traceFile, 100);
+		//String traceFile = "traces/torque/20090901";
+		//TraceList trace = runTorque(traceFile, 100);
 		
 		ArrayList<TraceJob> tl = trace.getTraceList();
 		ArrayList<Node> nl = trace.getNodeList();
-		Scheduler scheduler = new SleepScheduler(tl, nl, 1);
+		Scheduler scheduler = new SimpleScheduler(tl, new SimpleNodeProxy(nl), 1);
 		
 		System.out.println("Simulating " + tl.size() + " jobs on " + nl.size() + " nodes");
 		

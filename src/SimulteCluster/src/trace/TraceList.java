@@ -294,7 +294,7 @@ public class TraceList {
 			List<String> nodes = job.getNodes();
 			for (String nodeName : nodes) {
 				if (!nameToNode.containsKey(nodeName)) {
-					nameToNode.put(nodeName, new SimpleNode(nodeName, 3, 3, 1));
+					nameToNode.put(nodeName, new SimpleNode(nodeName));
 				}
 			}
 		}
@@ -339,7 +339,7 @@ public class TraceList {
 	public ArrayList<Node> getNodeList(int n) {
 		if (nodeList.isEmpty()) {
 			for (int i = 0; i < n; i++) {
-				nodeList.add(new SimpleNode(""+i, 3, 3, 1));
+				nodeList.add(new SimpleNode(""+i));
 			}
 		}
 		return nodeList;

@@ -21,8 +21,6 @@ public class SimpleScheduler implements Scheduler {
 	// because the start time has passed
 	protected List<SimulatedJob> queuedJobs;
 	
-	protected List<Node> nodes;
-	
 	// time between batches of jobs being scheduled
 	protected int generationTime;
 	
@@ -35,16 +33,14 @@ public class SimpleScheduler implements Scheduler {
 	// node proxy which provides nodes to execute jobs on
 	protected NodeProxy nodeProxy;
 
-	public SimpleScheduler(List<TraceJob> jobs, List<Node> nodes,
+	public SimpleScheduler(List<TraceJob> jobs, NodeProxy nodeProxy,
 			int generationTime) {
 		// jobs list is cloned since jobs are removed from the list as
 		// they are executed
 		this.jobs = new ArrayList<TraceJob>(jobs);
 		queuedJobs =  new ArrayList<SimulatedJob>();
-		this.nodes = nodes;
 		
-		// SimpleNodeProxy keeps all nodes up
-		nodeProxy = new SimpleNodeProxy(nodes);
+		this.nodeProxy = nodeProxy;
 		this.generationTime = generationTime;
 		this.lastScheduledTime = 0;
 
@@ -104,7 +100,7 @@ public class SimpleScheduler implements Scheduler {
 
 	@Override
 	public List<Node> getNodes() {
-		return nodes;
+		return nodeProxy.getNodes();
 	}
 
 }

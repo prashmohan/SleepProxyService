@@ -21,14 +21,17 @@ public interface Node {
 	
 	public boolean isOn();
 	public boolean isSleeping();
+	public boolean isWaking();
 
 	// add a job to the list of jobs running on this node
 	public void addJob(SimulatedJob job);
 	// increment the time this node is on
-	public void incUpTime(int time);
+	public void updateStats(int time, int timeLength);
 	
 	public int getUpTime();
 	
+	public double getTotalEnergyUsed();
+
 	enum PowerState {
 		ON,
 		OFF,

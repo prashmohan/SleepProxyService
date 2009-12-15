@@ -8,41 +8,33 @@ import scheduler.command.WakeCommand;
 
 import node.Node;
 
-public class SleepProxy implements NodeProxy {
+public class SleepProxyKeepOn implements NodeProxy {
 
 	private List<Node> nodes;
-	
-	// node that simulates the sleep proxy node
-	Node masterNode;
-	
-	// nodes which are sleeping
+	private Node masterNode;
 	private List<Node> sleepingNodes;
-	
-	// nodes which are waking
 	private List<Node> wakingNodes;
-	
-	// nodes that are on
 	private List<Node> onNodes;
-	
-	// nodes that are on but do not have a job running
 	private List<Node> availableNodes;
 	
-	// commands that need to be executed
 	private List<Command> commands;
+	int numKeepOn;
 	
-	public SleepProxy(List<Node> nodes) {
+	// same as SleepProxy except that a certain threshold of nodes must be
+	// kept on
+	public SleepProxyKeepOn(List<Node> nodes, double perKeepOn) {
 		this.nodes = nodes;
 		if (!nodes.isEmpty()) {
 			masterNode = nodes.get(0);
 		}
+		// number of nodes that must be kept on
+		numKeepOn = (int)(perKeepOn * nodes.size());
 		wakingNodes = new ArrayList<Node>();
 		sleepingNodes = new ArrayList<Node>();
 		onNodes = new ArrayList<Node>();
 		availableNodes = new ArrayList<Node>();
 		commands = new ArrayList<Command>();
 		
-		// all nodes are initially assumed to be on and
-		// not running any jobs
 		for (Node node : nodes) {
 			if (node.isOn()) {
 				availableNodes.add(node);
@@ -55,10 +47,8 @@ public class SleepProxy implements NodeProxy {
 
 	@Override
 	public List<Command> getCommands(int time) {
-		// add all sleep commands to the list of current commands
 		commands.addAll(getSleepCommands(time));
 		List<Command> returnCommands = commands;
-		// reset the commands list
 		commands = new ArrayList<Command>();
 		return returnCommands;
 	}
@@ -66,18 +56,17 @@ public class SleepProxy implements NodeProxy {
 	public List<Command> getSleepCommands(int time) {
 		List<Command> commands = new ArrayList<Command>();
 		List<Node> nodesPutSleep = new ArrayList<Node>();
-		// the available nodes are ones which are not being utilized
 		for (Node node : availableNodes) {
-			// sanity check
-			assert node.isOn() && node.getNumberOfJobs(time) == 0;
+			// ensure that numKeep nodes are on
+			if (onNodes.size() - nodesPutSleep.size() < numKeepOn) {
+				break;
+			}
 			if (node.isOn() && node.getNumberOfJobs(time) == 0
 					&& node != masterNode) {
-				// put node to sleep
 				commands.add(new SleepCommand(node, time));
 				nodesPutSleep.add(node);
 			}
 		}
-		// update appropriate lists
 		onNodes.removeAll(nodesPutSleep);
 		availableNodes.removeAll(nodesPutSleep);
 		sleepingNodes.addAll(nodesPutSleep);
@@ -85,21 +74,20 @@ public class SleepProxy implements NodeProxy {
 	}
 
 	@Override
-	// the main aspect of the node proxy. when the scheduler needs nodes,
-	// it calls this function. this function returns available nodes, but
-	// also starts to wake nodes if there are not enough nodes currently 
-	// available
 	public List<Node> getAvailableNodes(int numNodesRequired, int time) {
-		// update the waking nodes list
-		updateWakingNodes();
-		// update the available nodes list
-		updateAvailableNodes(time);
 
+		updateWakingNodes();
+		updateAvailableNodes(time);
+		
+		// scheduler always requires numKeepOn nodes on
+		if (onNodes.size() < numKeepOn) {
+			numNodesRequired = Math.max(numNodesRequired, numKeepOn);
+		}
+		
 		if (numNodesRequired == 0) {
 			return new ArrayList<Node>();
 		}
 		
-		// get a list of the current nodes that are available to be used
 		List<Node> returnNodes = new ArrayList<Node>();
 		for (Node node : availableNodes) {
 			returnNodes.add(node);
@@ -107,14 +95,12 @@ public class SleepProxy implements NodeProxy {
 				break;
 		}
 
-		// calculate number of nodes that need to be awakened
 		if (numNodesRequired > returnNodes.size()) {
 			int numNodesToWake = numNodesRequired - returnNodes.size()
 					- wakingNodes.size();
 			addWakeCommands(numNodesToWake, time);
 		}
 
-		// update available nodes list
 		availableNodes.removeAll(returnNodes);
 		return returnNodes;
 	}
@@ -128,7 +114,6 @@ public class SleepProxy implements NodeProxy {
 			numNodesToWake = sleepingNodes.size();
 		}
 
-		// add commands to wake nodes
 		for (int i = 0; i < numNodesToWake; i++) {
 			Node sleepingNode = sleepingNodes.get(i);
 			commands.add(new WakeCommand(sleepingNode, time));

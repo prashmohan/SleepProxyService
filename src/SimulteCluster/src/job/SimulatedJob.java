@@ -63,4 +63,8 @@ public class SimulatedJob {
 		cal.setTimeInMillis((long) traceJob.getStartTime() * 100);
 		return new SimpleDateFormat("HH").format(cal.getTime());
 	}
+
+	public double getCpu(int time) {
+		return 100;
+	}
 }

@@ -1,18 +1,19 @@
 package scheduler.nodeproxy;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import scheduler.command.Command;
 import scheduler.command.SleepCommand;
 import scheduler.command.WakeCommand;
 
 import node.Node;
 
-public class SleepProxy implements NodeProxy {
+public class SleepProxyNoImmediateSleep implements NodeProxy {
 
 	private List<Node> nodes;
-	
-	// node that simulates the sleep proxy node
 	Node masterNode;
 	
 	// nodes which are sleeping
@@ -25,12 +26,15 @@ public class SleepProxy implements NodeProxy {
 	private List<Node> onNodes;
 	
 	// nodes that are on but do not have a job running
-	private List<Node> availableNodes;
+	private Map<Node, Integer> availableNodes;
 	
 	// commands that need to be executed
 	private List<Command> commands;
+
+	// time node should wait before sleeping
+	private int timeBeforeSleep;
 	
-	public SleepProxy(List<Node> nodes) {
+	public SleepProxyNoImmediateSleep(List<Node> nodes, int timeBeforeSleep) {
 		this.nodes = nodes;
 		if (!nodes.isEmpty()) {
 			masterNode = nodes.get(0);
@@ -38,14 +42,15 @@ public class SleepProxy implements NodeProxy {
 		wakingNodes = new ArrayList<Node>();
 		sleepingNodes = new ArrayList<Node>();
 		onNodes = new ArrayList<Node>();
-		availableNodes = new ArrayList<Node>();
+		availableNodes = new HashMap<Node, Integer>();
 		commands = new ArrayList<Command>();
+		this.timeBeforeSleep = timeBeforeSleep;
 		
 		// all nodes are initially assumed to be on and
 		// not running any jobs
 		for (Node node : nodes) {
 			if (node.isOn()) {
-				availableNodes.add(node);
+				availableNodes.put(node, 0);
 				onNodes.add(node);
 			} else if (node.isSleeping()) {
 				sleepingNodes.add(node);
@@ -67,7 +72,13 @@ public class SleepProxy implements NodeProxy {
 		List<Command> commands = new ArrayList<Command>();
 		List<Node> nodesPutSleep = new ArrayList<Node>();
 		// the available nodes are ones which are not being utilized
-		for (Node node : availableNodes) {
+		for (Node node : availableNodes.keySet()) {
+			// if the minimum amount of time hasn't passed, then
+			// we cannot put this node to sleep
+			if (time - availableNodes.get(node) < timeBeforeSleep) {
+				continue;
+			}
+			
 			// sanity check
 			assert node.isOn() && node.getNumberOfJobs(time) == 0;
 			if (node.isOn() && node.getNumberOfJobs(time) == 0
@@ -79,7 +90,9 @@ public class SleepProxy implements NodeProxy {
 		}
 		// update appropriate lists
 		onNodes.removeAll(nodesPutSleep);
-		availableNodes.removeAll(nodesPutSleep);
+		for (Node node : nodesPutSleep) {
+			availableNodes.remove(node);
+		}
 		sleepingNodes.addAll(nodesPutSleep);
 		return commands;
 	}
@@ -101,7 +114,7 @@ public class SleepProxy implements NodeProxy {
 		
 		// get a list of the current nodes that are available to be used
 		List<Node> returnNodes = new ArrayList<Node>();
-		for (Node node : availableNodes) {
+		for (Node node : availableNodes.keySet()) {
 			returnNodes.add(node);
 			if (returnNodes.size() >= numNodesRequired)
 				break;
@@ -115,7 +128,9 @@ public class SleepProxy implements NodeProxy {
 		}
 
 		// update available nodes list
-		availableNodes.removeAll(returnNodes);
+		for (Node node : returnNodes) {
+			availableNodes.remove(node);
+		}
 		return returnNodes;
 	}
 
@@ -152,15 +167,14 @@ public class SleepProxy implements NodeProxy {
 	private void updateAvailableNodes(int time) {	
 		for (Node node : onNodes) {
 			if (node.isOn() && node.getNumberOfJobs(time) == 0 && 
-					!availableNodes.contains(node)) {
-				availableNodes.add(node);
+					!availableNodes.containsKey(node)) {
+				availableNodes.put(node, time);
 			}
 		}
 	}
-	
+
 	@Override
 	public List<Node> getNodes() {
 		return nodes;
 	}
-
 }
