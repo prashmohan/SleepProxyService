@@ -39,7 +39,7 @@ public class TraceJob implements Comparable<TraceJob>{
 		return jobId;
 	}
 	
-	private int getSubmitTime() {
+	public int getSubmitTime() {
 		return submitTime;	
 	}
 	

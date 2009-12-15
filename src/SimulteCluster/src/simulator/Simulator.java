@@ -12,9 +12,11 @@ import node.Node;
 import scheduler.SimpleScheduler;
 import scheduler.Scheduler;
 import scheduler.command.Command;
-import scheduler.nodeproxy.NodeProxy;
 import scheduler.nodeproxy.SimpleNodeProxy;
 import scheduler.nodeproxy.SleepProxy;
+import scheduler.nodeproxy.SleepProxyKeepAvailable;
+import scheduler.nodeproxy.SleepProxyKeepOn;
+import scheduler.nodeproxy.SleepProxyNoImmediateSleep;
 import trace.TraceJob;
 import trace.TraceList;
 import job.SimulatedJob;
@@ -348,7 +350,7 @@ public class Simulator {
 		
 		ArrayList<TraceJob> tl = trace.getTraceList();
 		ArrayList<Node> nl = trace.getNodeList();
-		Scheduler scheduler = new SimpleScheduler(tl, new SimpleNodeProxy(nl), 1);
+		Scheduler scheduler = new SimpleScheduler(tl, new SleepProxyKeepAvailable(nl, .01), 1);
 		
 		System.out.println("Simulating " + tl.size() + " jobs on " + nl.size() + " nodes");
 		
