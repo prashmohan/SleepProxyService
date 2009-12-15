@@ -3,6 +3,7 @@ package trace;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -198,63 +199,61 @@ public class TraceList {
 	private void ParseTorque(String filename, int n) {
 		File file = new File(filename);
 		FileInputStream fis = null;
-		HashMap<String, TraceJob> hash = new HashMap<String, TraceJob>();
-		HashMap<Integer, String> hash2 = new HashMap<Integer, String>();
+		Hashtable<String, TraceJob> hash = new Hashtable<String, TraceJob>();
+		Hashtable<Integer, String> hash2 = new Hashtable<Integer, String>();
 		try {
 			fis = new FileInputStream(file);
-			BufferedReader d = new BufferedReader(new InputStreamReader(fis));
+			BufferedReader d = new BufferedReader(
+					new InputStreamReader(fis));
 			String readLine;
 			int heaplimit = 0;
 			int placeholder = 0;
 			while ((readLine = d.readLine()) != null & heaplimit < n) {
 				if (!(readLine.startsWith("#") || readLine.equals(""))) {
-					String[] x = readLine.trim().split("[;\\s]");
-					if (x[1].equals("S")) {
+					String[] x = readLine.trim().split(";");
+					if(x[1].equals("S")){
 						hash2.put(new Integer(placeholder), x[2]);
 						placeholder++;
-					} else if (x[1].equals("E")) {
+					}
+					else if(x[1].equals("E")){
 						TraceJob temp = new TraceJob();
 						temp.jobId = x[2];
 						String[] z = x[3].trim().split("\\s+");
-						String[] y = new String[21];
-						for (int i = 0; i < z.length; i++) {
+						String[] y= new String[21];
+						for(int i=0;i<z.length;i++){
 							String[] value = z[i].trim().split("=");
-							if (value[0].equals("ctime")) {
-								y[4] = value[1];// submit time
-							} else if (value[0].equals("qtime")) {
-								y[5] = value[1];// dispatch time
-							} else if (value[0].equals("etime")) {
-								y[6] = value[1];// time job was queued
-							} else if (value[0].equals("start")) {
-								y[7] = value[1];// start time
-							} else if (value[0].equals("exec_host")) {
-								y[8] = value[1];// list of node_name/no_of_cpu
-								// assigned
-							} else if (value[0].equals("end")) {
-								y[15] = value[1];// end time
-							} else if (value[0]
-									.equals("Resource_List.walltime")) {
-								y[13] = value[1];// Max time allowed
-							} else if (value[0].equals("resources_used.cput")) {
-								y[17] = value[1];// Cpu Time used in secs
+							if(value[0].equals("ctime")){
+								y[4]=value[1];//submit time
+							} else if (value[0].equals("qtime")){
+								y[5]=value[1];//dispatch time  
+							}else if (value[0].equals("etime")){
+								y[6]=value[1];//time job was queued
+							}else if (value[0].equals("start")){
+								y[7]=value[1];//start time
+							}else if (value[0].equals("exec_host")){
+								y[8]=value[1];//list of node_name/no_of_cpu assigned
+							}else if (value[0].equals("end")){
+								y[15]=value[1];//end time
+							}else if (value[0].equals("Resource_List.walltime")){
+								y[13]=value[1];//Max time allowed
+							}else if (value[0].equals("resources_used.cput")){
+								y[17]=value[1];//Cpu Time used in secs
 							}
 						}
-						temp.startTime = getOnlyNumerics((y[7]));
-						temp.submitTime = getOnlyNumerics((y[4]));
-						temp.endTime = getOnlyNumerics((y[15]));
-						temp.dispatchTime = getOnlyNumerics((y[5]));
-						temp.timeLimit = getTime((y[13]));
-						String[] nodestring = (y[8]).trim().split("/");
-						if (nodestring[1].equals("0"))
-							nodestring[1] = "1";
-						temp.nproc = getOnlyNumerics(nodestring[1]);
+						temp.startTime=getOnlyNumerics((y[7]));
+						temp.submitTime=getOnlyNumerics((y[4]));
+						temp.endTime=getOnlyNumerics((y[15]));
+						temp.dispatchTime=getOnlyNumerics((y[5]));
+						temp.timeLimit= getTime((y[13]));
+						String[] nodestring=(y[8]).trim().split("/");
+						if(nodestring[1].equals("0"))nodestring[1]="1";
+						temp.nproc=getOnlyNumerics(nodestring[1]);
 						temp.nodes.add(nodestring[0]);
-						int ProcessorTimeUtilised = getTime((y[17]));
+						int ProcessorTimeUtilised = getTime((y[17])); 
 						Double CpuUse;
-						int runTime = temp.endTime - temp.startTime;
-						if (runTime != 0) {
-							CpuUse = (ProcessorTimeUtilised * 100.0)
-									/ (runTime * temp.nproc);
+						int runTime=temp.endTime-temp.startTime;
+						if(runTime!=0){
+							CpuUse = (ProcessorTimeUtilised * 100.0) / (runTime*temp.nproc);  
 						} else {
 							CpuUse = 100.0;
 						}
@@ -266,21 +265,24 @@ public class TraceList {
 						if (temp.cpuUse < 0) {
 							temp.cpuUse = 0;
 						}
-						if (temp.nproc > 0 && temp.submitTime >= 0
-								&& temp.startTime >= 0
-								&& temp.endTime >= temp.startTime) {
-
-							hash.put(temp.jobId, temp);
-							heaplimit++;
+						if (temp.nproc > 0 && temp.submitTime>=0 && temp.startTime>=0 && temp.endTime>=temp.startTime) {
+								
+								hash.put(temp.jobId, temp);	
+								heaplimit++;
+							
 						}
+						
+
 					}
+
+
 				}
 			}
-			for (int i = 0; i < heaplimit; i++) {
-				if (hash2.containsKey(new Integer(i))) {
-					if (hash.containsKey(hash2.get(new Integer(i)))) {
-						tracelist.add(hash.get(hash2.get(new Integer(i))));
-					}
+			for(int i=0;i<heaplimit;i++){
+				if(hash2.containsKey(new Integer(i))){
+				if (hash.containsKey(hash2.get(new Integer(i)))){
+				getTraceList().add(hash.get(hash2.get(new Integer(i))));
+				}
 				}
 			}
 			fis.close();
