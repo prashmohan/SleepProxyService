@@ -1,17 +1,25 @@
 package job;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 import trace.TraceJob;
 
 public class SimulatedJob {
+ 
+	// the job in the trace this simulated job was based on
+	protected TraceJob traceJob;
 
-	private TraceJob traceJob;
+	// time the scheduler submitted job in the simulator
 	private int submitTime;
-	private int startTime;
+	
+	// time the job started executing on a node
+	protected int startTime;
+	
+	// time job finished
 	private int endTime;
+	
+	// time required to finish, derived from the traceJob
 	private int requiredTime;
 
 	public SimulatedJob(int submitTime, TraceJob traceJob) {
@@ -36,20 +44,27 @@ public class SimulatedJob {
 	}
 	
 	public String toString() {
-		return "<" + traceJob.getJobId() + "," + startTime + "," + requiredTime + ">";
+		return "<Job " + traceJob.getJobId() + ", start " + startTime + ", req " + requiredTime + ">";
 	}
 	
 	public int getTimeToCompletion() {
 		return endTime - submitTime;
 	}
 	
-	public int getExecTime() {
+	public int getTimeExec() {
 		return endTime - startTime;
 	}
 	
+	// returns the hour (in military time) that traceJob was started. gives
+	// the time in epoch format, so it should be adjusted to account for time
+	// zone differences
 	public String getTimeOfDay() {
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeInMillis((long) traceJob.getStartTime() * 100);
-		return new SimpleDateFormat("hh").format(cal.getTime());
+		return new SimpleDateFormat("HH").format(cal.getTime());
+	}
+
+	public double getCpu(int time) {
+		return 100;
 	}
 }

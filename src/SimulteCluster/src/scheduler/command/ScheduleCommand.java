@@ -16,9 +16,11 @@ public class ScheduleCommand extends Command {
 
 	@Override
 	public void execute(List<SimulatedJob> jobStatus, int time) {
+		// should only schedule on nodes without any jobs
 		assert node.getNumberOfJobs(time) == 0;
 		node.addJob(job);
 		jobStatus.add(job);
+		// update the job start time, which is different from the submit time
 		job.start(time);
 	}
 
@@ -33,6 +35,6 @@ public class ScheduleCommand extends Command {
 	}
 	
 	public String toString() {
-		return "Schedule(" + startTime + "): node " + node.getNodeId() + "," + job.getJobId();
+		return "Schedule(" + startTime + "): node " + node.getNodeId() + ",job " + job.getJobId();
 	}
 }

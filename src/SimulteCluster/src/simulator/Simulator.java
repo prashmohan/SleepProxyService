@@ -1,39 +1,54 @@
 package simulator;
 
 
-import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import node.Node;
-import node.SimpleNode;
-
 import scheduler.SimpleScheduler;
-import scheduler.SleepScheduler;
 import scheduler.Scheduler;
-import scheduler.SleepSchedulerKeep;
 import scheduler.command.Command;
+import scheduler.nodeproxy.SimpleNodeProxy;
+import scheduler.nodeproxy.SleepProxy;
+import scheduler.nodeproxy.SleepProxyKeepAvailable;
+import scheduler.nodeproxy.SleepProxyKeepOn;
+import scheduler.nodeproxy.SleepProxyNoImmediateSleep;
 import trace.TraceJob;
 import trace.TraceList;
 import job.SimulatedJob;
 
 public class Simulator {
 
+	// scheduler used, it should give commands which are processed
 	private Scheduler scheduler;
+	
+	// current jobs that are being processed on the nodes
+	private List<SimulatedJob> jobStatus;
+	
+	// commands that have been issued, but the time is not great enough
+	// to simulate them
+	private List<Command> queuedCommands;
+	
+	// list of jobs which are finished. each job contains information 
+	// its runtime
+	private List<SimulatedJob> allFinishedJobs;
+	
+	// prints to a debug file
+	private PrintStream debug;
+	
+	// logs the number of nodes running at time n
+	private PrintStream nodesUp;
+
+	// stores maximum number of nodes up at any time since the last
+	// output to PrintStream nodesUp
+	int maxNodes;
+	
 	private int time;
 	private List<Node> nodes;
-	private List<SimulatedJob> jobStatus;
-	private List<Command> queuedCommands;
-	private List<SimulatedJob> allFinishedJobs;
-	PrintStream debug;
-	PrintStream nodesup;
-	int maxNodes;
 	
 	public Simulator(Scheduler scheduler) {
 		this.scheduler = scheduler;
@@ -47,21 +62,25 @@ public class Simulator {
 		allFinishedJobs = new ArrayList<SimulatedJob>();
 		time = 0;
 		maxNodes = 0;
+		
 		try {
 			debug = new PrintStream("debug");
-			nodesup = new PrintStream("nodesup");
+			nodesUp = new PrintStream("nodesup");
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException("Cannot open output files.");
 		}
+	}
+	
+	public void cleanUp() {
+		debug.close();
+		nodesUp.close();	
 	}
 
 	public void simulateUntilFinish() {
 		while(!finished()) {
 			simulate();
 		}
-		debug.close();
-		nodesup.close();
+		cleanUp();
 	}
 	
 	public void printNodesUp(int time) {
@@ -71,40 +90,54 @@ public class Simulator {
 				numNodes++;
 			}
 		}
+		// update maxNodes
 		maxNodes = Math.max(numNodes, maxNodes);
+		
+		// output to PrintStream nodesup the maximum nodes up during the
+		// last n seconds. currently n = 60, but this can be changed
 		if (time % 60 == 0) {
-			nodesup.println(time + " " + numNodes);
+			nodesUp.println(time + " " + numNodes);
 			maxNodes = 0;
 		}
 	}
 	
 	private void simulate() {
-		printNodesUp(time);
-		processQueuedCommands();
-		processJobsOnNodes();
-//		if (time == 2571791 || time == 5931344)
-	//		System.out.println("blah");
 		
-		
-		time++;
 		List<Command> commands = scheduler.getCommands(time);
 		if (commands != null) {
 			queuedCommands.addAll(commands);
 		}
+		
+		// see if any commands can be issued, and issue them
+		processQueuedCommands();
+		// update the jobs on each node. if a job is finished, then
+		// it will be removed
+		processJobsOnNodes();		
+		
+		incTime();
+		
+		printNodesUp(time);
+	}
+	
+	private void incTime() {
+		time++;
 	}
 
 	private void processJobsOnNodes() {
-		boolean allJobsFinished = true;
+		//update jobs on each node
 		for(Node node : nodes) {
+			// increment uptime if node is waking up or is on
+			node.updateStats(time, 1);
+			
 			if (!node.isOn()) 
 				continue;
 			
-			node.incUpTime();
+			// get all active jobs on node
 			List<SimulatedJob> nodeJobs = node.getJobs();
 			if (nodeJobs.size() == 0) 
 				continue;
-			allJobsFinished = false;
 			
+			// find all finished jobs on the node
 			ArrayList<SimulatedJob> finishedJobs = new ArrayList<SimulatedJob>();
 			for (SimulatedJob job : nodeJobs) {
 				if(job.isFinished(time)) {
@@ -112,23 +145,28 @@ public class Simulator {
 				}
 			}
 			
+			// remove the finished jobs from the appropriate list
+			// add the finished jobs to the allFinishedJobs list
 			for (SimulatedJob finishedJob : finishedJobs) {
 				nodeJobs.remove(finishedJob);
 				jobStatus.remove(finishedJob);
 				allFinishedJobs.add(finishedJob);
-				debug.println("" + time + ":Finish (" + node.getNodeId() + ")" + finishedJob.getJobId());
+				
+				debug.println("" + time + ":Finish (Node:" + node.getNodeId() + ")" + finishedJob.getJobId());
 			}
 		}
-		assert !allJobsFinished || jobStatus.isEmpty();
 	}
 
 	private void processQueuedCommands() {
 		List<Command> finishedCommands = new ArrayList<Command>();
+		// go through all of the queued commands
 		for (Command command : queuedCommands) {
+			// see if command can be executed
 			if (command.shouldExecute(time)) {
 				debug.println("" + time + ":" + command);
 				command.execute(jobStatus, time);
 			}
+			// add to list is commands which are removed
 			if (command.isFinished(time)) {
 				finishedCommands.add(command);
 			}
@@ -137,11 +175,16 @@ public class Simulator {
 	}
 
 	private boolean finished() {
+		// simulator is finished if scheduler has no more jobs to finish
+		// and there are not currently any jobs running on the nodes
 		return scheduler.isFinished() && jobStatus.isEmpty();
 	}
 	
+	// print out the information about the trace run 
 	public void outputInfo() {
 		try {
+			// print how long each node has been up in the following format:
+			// nodeId time
 			PrintStream ps = new PrintStream("nodeuptime");
 			debug.println("Total time:" + time);
 			ps.println("Total\t" + time);
@@ -152,19 +195,22 @@ public class Simulator {
 			}
 			ps.close();
 			
+			// print info about each job simulated job:
 			ps = new PrintStream("jobinfo");
 			ps.println("id,runtime,completiontime,timeofday");
 	
+			// since each job is run on multiple nodes, we need to conglomerate
+			// all processes that are from the same job
 			Map<String, ArrayList<SimulatedJob>> finishedJobs = new HashMap<String, ArrayList<SimulatedJob>>();
 			for (int i = 0; i < allFinishedJobs.size(); i++) {
 				SimulatedJob j = allFinishedJobs.get(i);
 				if (finishedJobs.containsKey(j.getJobId())) {
-					ArrayList<SimulatedJob> j2 = finishedJobs.get(j.getJobId());
-					j2.add(j);
+					ArrayList<SimulatedJob> jobList = finishedJobs.get(j.getJobId());
+					jobList.add(j);
 				} else {
-					ArrayList<SimulatedJob> j2 = new ArrayList<SimulatedJob>();
-					j2.add(j);
-					finishedJobs.put(j.getJobId(), j2);
+					ArrayList<SimulatedJob> jobList = new ArrayList<SimulatedJob>();
+					jobList.add(j);
+					finishedJobs.put(j.getJobId(), jobList);
 				}
 			}
 			
@@ -172,16 +218,22 @@ public class Simulator {
 			double avgPerIncTTC = 0;
 			
 			for (String jobId : finishedJobs.keySet()) {
+				// calculate time to completion and runtime for each job
 				ArrayList<SimulatedJob> jobs = finishedJobs.get(jobId);
 				int runtime = 0;
 				int comptime = 0;
 				for (int i = 0;  i < jobs.size(); i++) {
 					SimulatedJob j = jobs.get(i);
-					runtime = Math.max(runtime, j.getExecTime());
+					runtime = Math.max(runtime, j.getTimeExec());
 					comptime = Math.max(comptime, j.getTimeToCompletion());
 				}
 				
+				// calculate in increase in time to completion
 				avgIncTTC += ((double)(comptime - runtime));
+				
+				// calculate the increase in percent time to completion, but
+				// the runtime is 0, just add 100. the runtime can be 0 if the
+				// job is extremely short
 				if (runtime != 0)
 					avgPerIncTTC += 100 * (((double)(comptime - runtime)) / runtime);
 				else 
@@ -194,15 +246,19 @@ public class Simulator {
 			avgPerIncTTC /= finishedJobs.size();
 			
 			ps.close();
-
+			// calculate the increase in percent time to completion
+			
+			// print info about when each job was started
 			ps = new PrintStream("jobtime");
 			
+			// create a list of start times
 			ArrayList<String> timeOfDay = new ArrayList<String>();
 			for (String jobId : finishedJobs.keySet()) {
 				ArrayList<SimulatedJob> jobs = finishedJobs.get(jobId);
 				timeOfDay.add(jobs.get(0).getTimeOfDay());
 			}
 			
+			// bin the list of start times by hour
 			for (int i = 0; i < 24; i++) {
 				int num = 0;
 				for (int j = 0; j < timeOfDay.size(); j++) {
@@ -219,6 +275,7 @@ public class Simulator {
 
 			ps.close();
 			
+			// print info about statistics from this simulation
 			ps = new PrintStream("stats");
 			ps.println("Num nodes: " + nodes.size());
 			ps.println("Num jobs: " + finishedJobs.size());
@@ -235,55 +292,73 @@ public class Simulator {
 			ps.println("Average uptime per node (sec): " + avgUptime);
 			ps.println("Avg Inc TTC (sec): " + avgIncTTC);
 			ps.println("Avg Inc TTC (%): " + avgPerIncTTC);
+			double totalEnergy = 0;
+			for (Node node : nodes) {
+				totalEnergy +=  node.getTotalEnergyUsed();
+			}
+			//convert from W * sec to kW * hr
+			totalEnergy /= 1000 * 3600;
+			ps.println("Total energy (kW * hr): " + totalEnergy);
 			
 			ps.close();
 			
+			// print a list of the times of the jobs in the trace
 			ps = new PrintStream("joblength");
 			for (String jobId : finishedJobs.keySet()) {
 				SimulatedJob j = finishedJobs.get(jobId).get(0);
-				ps.println(j.getExecTime());
+				ps.println(j.getTimeExec());
 			}
 			ps.close();
 			
 
  		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+ 			throw new RuntimeException("Cannot output simulation info files.");
+ 		}
 	}
 	
-
-	public static TraceList runGwf(String traceFile) {
-		TraceList trace = new TraceList(traceFile, 100000,"gwf");
+	// Static calls to retrieve a list of jobs from a trace
+	public static TraceList runGwf(String traceFile, int jobSize, int nodeSize) {
+		TraceList trace = new TraceList(traceFile, jobSize,"gwf");
 		System.out.println("Trace read in from " + traceFile);
-		trace.getNodeList(5000);
+		trace.getNodeList(nodeSize);
 		return trace;
 	} 
 	
-	public static TraceList runMaui(String traceFile) {
-		TraceList trace = new TraceList(traceFile, 200000, "maui");
+	public static TraceList runMaui(String traceFile, int size) {
+		TraceList trace = new TraceList(traceFile, size, "muai");
 		return trace;
 	}
 	
-	public static void main(String args[]) {
+	public static TraceList runTorque(String traceFile, int size) {
+		TraceList trace = new TraceList(traceFile, size, "torque");
+		return trace;
+	}
+	
+	public static void main(String args[]) throws FileNotFoundException {
 		if (args.length < 1) {
 			System.out.println("java Simulator [sample load file]");
 		}
 		
-		//String traceFile = "traces/anon_jobs.gwf";
-		String traceFile = "traces/grid5000_clean_trace.log";
+		//String traceFile = "traces/grid5000_clean_trace.log";
+		//String traceFile = "traces/HPC2N";
 		
-		TraceList trace = runGwf(traceFile);
+		String traceFile = "traces/anon_jobs.gwf";
+		TraceList trace = runGwf(traceFile, 200000, 400);
+		
+		//String traceFile = "traces/torque/20090901";
+		//TraceList trace = runTorque(traceFile, 10000);
 		
 		ArrayList<TraceJob> tl = trace.getTraceList();
-		tl.remove(0);
 		ArrayList<Node> nl = trace.getNodeList();
-		Scheduler scheduler = new SleepScheduler(tl, nl, 1);
+		Scheduler scheduler = new SimpleScheduler(tl, new SleepProxy(nl), 1);
+		
 		System.out.println("Simulating " + tl.size() + " jobs on " + nl.size() + " nodes");
 		
 		Simulator simulator = new Simulator(scheduler);
 		simulator.simulateUntilFinish();
+		
 		System.out.println("Simulation done");
 		simulator.outputInfo();
+		System.out.println("Output done");
 	}
 }

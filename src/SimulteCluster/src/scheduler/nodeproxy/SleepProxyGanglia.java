@@ -2,18 +2,19 @@ package scheduler.nodeproxy;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import job.SimulatedJob;
 import scheduler.command.Command;
 import scheduler.command.SleepCommand;
 import scheduler.command.WakeCommand;
 
 import node.Node;
 
-public class SleepProxy implements NodeProxy {
+public class SleepProxyGanglia implements NodeProxy {
 
 	private List<Node> nodes;
 	
-	// node that simulates the sleep proxy node
-	Node masterNode;
+	private Node masterNode; 
 	
 	// nodes which are sleeping
 	private List<Node> sleepingNodes;
@@ -29,12 +30,17 @@ public class SleepProxy implements NodeProxy {
 	
 	// commands that need to be executed
 	private List<Command> commands;
+
+	// maximum cpu usage that a node can have to be considered
+	// available
+	private double cpuThreshold;
 	
-	public SleepProxy(List<Node> nodes) {
+	public SleepProxyGanglia(List<Node> nodes, double cpuThreshold) {
 		this.nodes = nodes;
 		if (!nodes.isEmpty()) {
 			masterNode = nodes.get(0);
 		}
+		this.cpuThreshold = cpuThreshold;
 		wakingNodes = new ArrayList<Node>();
 		sleepingNodes = new ArrayList<Node>();
 		onNodes = new ArrayList<Node>();
@@ -63,13 +69,12 @@ public class SleepProxy implements NodeProxy {
 		return returnCommands;
 	}
 
-	public List<Command> getSleepCommands(int time) {
+	private List<Command> getSleepCommands(int time) {
 		List<Command> commands = new ArrayList<Command>();
 		List<Node> nodesPutSleep = new ArrayList<Node>();
 		// the available nodes are ones which are not being utilized
 		for (Node node : availableNodes) {
 			// sanity check
-			assert node.isOn() && node.getNumberOfJobs(time) == 0;
 			if (node.isOn() && node.getNumberOfJobs(time) == 0
 					&& node != masterNode) {
 				// put node to sleep
@@ -115,11 +120,10 @@ public class SleepProxy implements NodeProxy {
 		}
 
 		// update available nodes list
-		availableNodes.removeAll(returnNodes);
 		return returnNodes;
 	}
 
-	public void addWakeCommands(int numNodesToWake, int time) {
+	private void addWakeCommands(int numNodesToWake, int time) {
 		if (numNodesToWake <= 0) {
 			return;
 		}
@@ -150,10 +154,17 @@ public class SleepProxy implements NodeProxy {
 	}
 	
 	private void updateAvailableNodes(int time) {	
+		availableNodes.clear();
 		for (Node node : onNodes) {
-			if (node.isOn() && node.getNumberOfJobs(time) == 0 && 
-					!availableNodes.contains(node)) {
-				availableNodes.add(node);
+			if (node.isOn()) {
+				double cpu = 0;
+				for (SimulatedJob job : node.getJobs()) {
+					cpu += job.getCpu(time);
+				}
+				
+				if (cpu < cpuThreshold) {
+					availableNodes.add(node);
+				}
 			}
 		}
 	}

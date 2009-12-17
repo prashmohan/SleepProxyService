@@ -6,7 +6,8 @@ import trace.TraceJob;
 import job.SimulatedJob;
 import node.Node;
 
-public class KillCommand extends Command {
+// currently this class is not used, so I marked it as abstract
+abstract class KillCommand extends Command {
 
 	private TraceJob job;
 

@@ -10,4 +10,5 @@ public interface NodeProxy {
 
 	public List<Command> getCommands(int time);
 	public List<Node> getAvailableNodes(int numNodesRequired, int time);
+	public List<Node> getNodes();
 }
