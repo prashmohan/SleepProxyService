@@ -1,0 +1,123 @@
+\documentclass[times,10pt,twocolumn]{article} 
+
+
+% new commands/macros
+% \usepackage{latex8}
+\usepackage[pdftex]{graphicx}
+\usepackage{color}
+\usepackage{amsfonts,amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage[pdftex]{hyperref}
+\usepackage{fullpage}
+\usepackage{url}
+\usepackage{multirow}
+% \usepackage{alltt}
+% \usepackage{sidecap}
+% % \usepackage[protrusion=true,expansion=true]{microtype}
+
+\pagestyle{empty}                                                     
+
+\newcommand{\required}[1]{\part{#1\hfil}}                    %%
+\renewcommand{\refname}{\hfil References\hfil}                   %%
+
+% hyperlink options
+\hypersetup{
+     bookmarks=true, 
+     colorlinks=true,
+     linkcolor=blue, 
+     citecolor=blue,
+     filecolor=blue,
+     urlcolor=blue     
+}
+
+\renewcommand{\topfraction}{1.00}
+\renewcommand{\floatpagefraction}{1.00}
+\renewcommand{\textfraction}{0.00}
+\renewcommand{\dbltopfraction}{1.00}
+\renewcommand{\dblfloatpagefraction}{1.00}
+
+% \addtolength{\parindent}{-1mm}
+% \addtolength{\parskip}{-0.1mm}
+% \addtolength{\belowcaptionskip}{-2mm}
+% \addtolength{\abovecaptionskip}{-2mm}
+% \addtolength{\dblfloatsep}{-2mm}
+% \addtolength{\dbltextfloatsep}{-2mm}
+
+\newenvironment{compactList}{\begin{list}{$\bullet$}{\leftmargin=0.5em}
+    {   \setlength{\itemsep}{0mm}
+        \setlength{\topsep}{0mm}}
+    }
+{\end{list}}
+
+
+% \newcommand{\Paragraph}[1]{\vspace{0in}\paragraph{#1}}
+% \newcommand{\SectionS}[1]{\vspace{0in}\section*{#1}\vspace{-.1in}}
+% \renewcommand{\Section}[1]{\vspace{0in}\section{#1}\vspace{-.1in}}
+% \newcommand{\Subsection}[1]{\vspace{0in}\subsection{#1}\vspace{-.1in}}
+% \newcommand{\Subsubsection}[1]{\vspace{0in}\subsubsection{#1}\vspace{0in}}
+
+
+% \newsavebox{\savepar}
+% \newenvironment{boxit}{\begin{lrbox}{\savepar}
+%     \begin{minipage}[b]{3.05in}}
+% {\end{minipage}\end{lrbox}\fbox{\usebox{\savepar}}}
+% \newcommand{\true}{\mathrm{true}}
+% \newcommand{\nd}[1]{\texttt{\footnotesize #1}}
+% \newcommand{\naive}{na\"{\i}ve\xspace}
+% \newcommand{\reminder}[1]{} %\textcolor{red}{{\bf [[#1]]}}\typeout{#1}}
+% \newcommand{\hash}[1]{\mathrm{\mbox{H}}(#1)}
+% %\renewcommand{\cite}[1]{\citep{#1}}
+% \newcommand{\aaa}{A$^3$\xspace}
+% \newcommand{\aaalog}{\textsc{\small A$^3$Log}\xspace}
+% \newcommand{\Lang}{\aaalog}
+% \newcommand{\Dlog}{NDlog\xspace}
+% \newcommand{\eat}[1]{}
+% \newcommand{\etal}{{\em et al.}\xspace}
+% \newenvironment{a3log}{\begin{alltt}\scriptsize}{\end{alltt}}
+
+\newcommand{\todo}[1]{{\bf TODO: #1}}
+  
+\date{}
+
+\begin{document}
+
+\title{$C^2$: Clean Clusters\\{\small Saving the world one cluster at a time}}
+\author{Shaon Barman \quad Prashanth Mohan \quad Himanshu Sharma \\
+\itshape
+  University of California, Berkeley\\
+\fontsize{9}{9}\selectfont\ttfamily\upshape
+\{sbarman, prmohan, himanshu\}@cs.berkeley.edu
+}
+
+\maketitle
+
+
+% \begin{figure}[ht]
+% \centering
+% \begin{center}
+% \includegraphics[width=3.0in]{}
+% \vspace{-0.1in}
+% \caption{{\normalsize }\label{fig:}}
+% \vspace{-0.1in}
+% \end{center}
+% \end{figure}
+
+\input{abstract}
+\input{intro}
+\input{related}
+% \input{setup}
+\input{architecture}
+\input{results}
+\input{conclusion}
+\section*{Acknowledgement}
+We would like to specifically thank the IT administrators of Soda Hall - Mike Howard and Jeff Anderson Lee who helped us identify various deployment specific issues in collecting logs and are helping us collect regular logs of job allocation and resource usage of nodes in the machine room.
+
+\begin{scriptsize}
+\bibliographystyle{latex8}
+\bibliography{citations}
+\end{scriptsize}
+
+
+\end{document}
+

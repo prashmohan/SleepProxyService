@@ -1,0 +1,38 @@
+\section{Related Work} % (fold)
+\label{sec:related_work}
+
+The ACPI standard~\cite{acpi} specifies multiple sleep states for computing nodes. Of particular interest are the {\em S3} state which signifies ``suspend-to-ram'' and {\em S4} which is ``Hibernation'' or ``suspend-to-disk''. Additionally, the standard also specifies multiple P states for voltage and frequency scaling of the CPU~\cite{Bo:04}, as well as C states signifying various states of execution for the processor. A node typically consumes less than 5W at S3 state and 0W at S4 (since no component is kept active). % \todo{Include graph measuring effect of frequency scaling on a desktop}
+
+Somniloquy~\cite{Yuvraj:09} uses a low powered secondary processor connected over the USB port in order to manage ongoing network connections on behalf of the main processor while the node sleeps. The device can work in isolation and wakes up the node only when needed. This however requires the applications to be modified to be able to transfer application network logic onto the device. Nedevschi et.al.~\cite{Sergiu:09} studied the network traffic in enterprise and home networks to understand what kind of traffic keeps the node from going to sleep. They also create a proxy device which performs many network activities on behalf of the sleeping node in order to allow for longer sleep periods of the node. This will not be able to cater to situations where network connections are left open on the host node. Apple's bonjour sleep proxy (part of Snow Leopard) is a similar service which uses the ``AirPort Extreme'' base station to broadcast bonjour service messages on behalf of the node and then uses Wake on Lan~\cite{wol} to remotely power the node up when needed. All of these mechanisms try to save power while still enabling the user to maintain their online presence. This could mean having their instant messengers active or just being able to SSH into the machine later on. While these solutions are applicable to the interactive computing, the problem in cluster computing is in many ways simpler. The cluster is centrally managed and does not maintain network state elsewhere. This report will focus on saving energy in cluster computing scenarios.
+
+Virtualization is a recent technology that has helped improve both consolidation and utilization of systems. GreenCloud~\cite{Liu:09} uses virtualization in the data center for reducing the number of physical hosts needed in the data center. Live migration of these virtual machines is used in order to not take a hit on user experience when some nodes are overloaded with tasks. VPM Tokens~\cite{Ripal:08} attaches tokens for resource usage, specifically energy usage in order to equally and fairly arbitrate between virtual machines. Asfandyar et.al.~\cite{Asfandyar:09} on the other hand look at how the load can be distributed to different data centers rather than just within a single data center. The jobs are distributed to match the changing cost of power both geographically as well as temporally. While migration of virtual machines help in reducing the set of active nodes, there has also been considerable past literature~\cite{tcpcp, mosix} on process migration. However, this is not directly usable in our ``race to sleep'' since there is significant state persistent on the host node and it is usually required to have the former node running and forwarding events to the new node.
+
+Wake on Lan\cite{wol,irwt} is a technology that keeps the network card active while putting all other components of the node to sleep. When a ``magic packet'' i.e. a packet with the MAC address of the NIC repeated 6 times is received, it is taken to be a command to wake the node up. This requires that the network support Wake on Lan which very common in current day hardware. IPMI (Intelligent Power Management Interface)~\cite{ipmi} is a newer technology supported by servers. IPMI can be used by system administrators to both monitor various health signals of the node as well as perform management tasks like remote rebooting and powering off of the node.
+
+Michael et.al.~\cite{Michael:09} evaluate the power savings in HPC clusters by using dynamic voltage and frequency scaling. They also introduce the concept of ``race to sleep'', turning the machines on and off. We build upon this work and provide a much more exhaustive analysis of the benefits of ``race to sleep'' as well as produce a working implementation of a power aware cluster management suite.
+
+% Ganglia
+% Somniloquy
+% Art of being Idle
+% wake on lan
+% IPMI
+% ACPI/APM
+% http://en.wikipedia.org/wiki/Sleep_Proxy_Service
+
+% Cutting the Electric Bill for Internet-Scale Systems
+
+% Sun Hedeby
+% Process Migration in Linux: http://cryopid.berlios.de/, http://linuxpmi.org/trac/
+% MOSIX
+% TCP Connection Passing: http://tcpcp.sourceforge.net/
+%  
+% p29-liu - GreenCloud - Aimed at internet data centers. Aims to reduce power consumption while still guarenteeing user performance. Uses real time VM migration. Addresses when to trigger VM migration and how to select alternative physical machines.
+% 
+% p119-nathuji - VPM Tokens - A system (cluster) is given a power budget. There exists a platform manager who decides how to allocate resources to VM based upon utility and power constraints.  Manages power by tuning amount of time a VM gets on the system processor and changing the processor clock frequency.
+% 
+% p1034-petrucci - Dynamic Adaption of Server Clusters - Creates profiles of running applications. From this and a set of adapation scripts, the cluster can be reconfigured. Reconfiguring entails putting nodes to sleep or changing the frequency/voltage. The system is dynamically monitored and when certain conditions are detected, the system undergoes a reconfiguration.
+% 
+
+
+
+% section related_work (end)
