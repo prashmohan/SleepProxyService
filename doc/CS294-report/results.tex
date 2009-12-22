@@ -48,13 +48,12 @@ We ran our implementation of CCexec (where all but a single node was sleeping) a
 
 \subsubsection{Simulator Setup} % (fold)
 \label{sub:trace_driven_simulation}
-The benchmark results we obtained from our experiments on the Atom node cluster would be a lower bound on the efficiency of compute nodes, since these nodes have minimal power requirements. We apply the overheads on two traces from the Grid Workload Archive~\cite{gwa}:
+The benchmark results we obtained from our experiments on the Atom node cluster would be a lower bound on the efficiency of compute nodes, since these nodes have minimal power requirements. We use power and timing number reported by the Somniloquy~\cite{Yuvraj:09} for the Dell Optiplex 745 server on traces obtained from the Grid Workload Archive~\cite{gwa}. The values are detailed in Table~\ref{tab:optiplex}.
 \begin{description}
     \item[DAS2 5-Cluster Grid Logs] - is a research grid composed of five Pentium/Linux clusters (one cluster with 144 CPUs and the rest with 64). The DAS-2 traces are provided by the Advanced School for Computing and Imaging, the owner of the DAS-2 system.
     \item[Grid 5000 logs] - is an experimental grid platform for large scale parallel and distributed computing research consisting of 9 sites geographically distributed in France. Each site comprises one or  several clusters, for a total of 15 clusters inside Grid 5000.
 \end{description}
 
-A simulator was built to understand the power savings from the above traces. We use power and timing number reported by the Somniloquy~\cite{Yuvraj:09} for the Dell Optiplex 745 server. The values are detailed in Table~\ref{tab:optiplex}
 \begin{table}[tp]
     \label{tab:optiplex}
     \centering
@@ -78,7 +77,7 @@ A simulator was built to understand the power savings from the above traces. We 
     \caption{Power and timing results for Optiplex 745 server used in evaluation of traces}
 \end{table}
 
-Table~\ref{tab:trace-comp} elucidates on the trace details. It also compares the overhead of running the \emph{Naive Sleep} scheduler explained in Section~\ref{ssub:overhead_induced_by_cc}
+Table~\ref{tab:trace-comp} elucidates on the trace details. It also compares the overhead of running the \emph{Naive Sleep} scheduler explained later in Section~\ref{ssub:overhead_induced_by_cc}
 
 \begin{table}
     \centering
@@ -127,6 +126,7 @@ We evaluate multiple algorithms for scheduling the sleeping of nodes in the clus
 % subsubsection simulation_results (end)
 
 The DAS2 trace is 192days and 15hours long with over 200000 jobs in the time frame running over 400 CPUs. The baseline energy usage of the cluster for the trace period is 188079 kWh. We compare the effect on energy saving and user experience with various sleep algorithms in Table~\ref{tab:sleep-overhead}. The \emph{MinNodesAvail} with 5\% of nodes available appears to be a good default tradeoff. It saves 81\% of the baseline power while introducing only a 2\% overhead to jobs on average. However, there is a no right scheduler for use in any cluster. It is a performance-power tradeoff that the system administrator would make. As is evident from Figure~\ref{fig:overhead-time}, \emph{MinNodesAvail} at 5\% easily outperforms \emph{Naive Sleep} with respect to user impact.
+The trade off between user response and power usage is graphically represented in Figure~\ref{fig:ttc-energy}.
 
 \begin{table*}
     \centering
@@ -173,6 +173,17 @@ The DAS2 trace is 192days and 15hours long with over 200000 jobs in the time fra
     \caption{Measurement of energy and performance overhead of different sleep schedulers on the DAS2 cluster}
     \label{tab:sleep-overhead}
 \end{table*}
+
+\begin{figure}[ht]
+\centering
+\begin{center}
+\includegraphics[width=3.0in]{graphs/ttcvsenergy.pdf}
+\vspace{-0.1in}
+\caption{{\normalsize Energy Vs Response time tradeoff for MinNodesAvail}\label{fig:ttc-energy}}
+\vspace{-0.1in}
+\end{center}
+\end{figure}
+
 % subsection overhead_of_ccexec (end)
 
 \subsection{Energy saving} % (fold)
