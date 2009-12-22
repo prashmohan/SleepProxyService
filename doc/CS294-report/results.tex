@@ -86,13 +86,13 @@ Table~\ref{tab:trace-comp} elucidates on the trace details. It also compares the
         \hline
         & {\bf DAS 2} & {\bf Grid 5000} \\
         \hline
-        Trace Length & 192d 15h & 195d 4h\\
+        Trace Length & 192d 15h & 167d 20h\\
         \hline
         No of nodes & 400 & 5000 \\
         \hline
-        Active period & 5.68\% & 1.17\% \\
+        Active period & 5.68\% & 1.18\% \\
         \hline
-        Increase in & 3.66s/41\% & 3.37s/5.4\%\\
+        Increase in & 3.66s/41\% & 3.37s/9.8\%\\
         job completion & & \\
         time (Naive Sleep) & &\\
         \hline
@@ -130,44 +130,44 @@ The trade off between user response and power usage is graphically represented i
 
 \begin{table*}
     \centering
-    \begin{tabular}{|c|c|c|r|}
+    \begin{tabular}{|c|c|c|r|r|}
         \hline
-        Algorithm & Parameter & Reading & Value \\
+        Algorithm & Parameter & Reading & DAS 2 & Grid 5000 \\
         \hline
-        \multirow{2}{*}{No Sleep} &  & Energy usage & 188079 kWh\\\cline{3-4}
-        & & Avg increase in time to completion & 0\%\\
+        \multirow{2}{*}{No Sleep} &  & Energy usage & 188079 kWh & 2021438 kWh \\\cline{3-5}
+        & & Avg increase in time to completion & 0\% & 0\% \\
         \hline
-        \multirow{2}{*}{Naive Sleep} & & Energy usage & 21084 kWh\\\cline{3-4}
-        & & Avg increase in TTC & 39.9\%\\
+        \multirow{2}{*}{Naive Sleep} & & Energy usage & 21084 kWh & 110472 kWh \\\cline{3-5}
+        & & Avg increase in TTC & 39.9\% & 9.66\% \\
         \hline
-        \multirow{6}{*}{MinNodesActive} & 1\% & Energy usage & 22474 kWh\\\cline{3-4}
-        & & Avg increase in TTC & 37.4\%\\\cline{2-4}
+        \multirow{6}{*}{MinNodesActive} & 1\% & Energy usage & 22474 kWh & 128519 kWh\\\cline{3-5}
+        & & Avg increase in TTC & 37.4\% & 3.43\% \\\cline{2-5}
         
-        & 5\% & Energy usage & 28926 kWh\\\cline{3-4}
-        & & Avg increase in TTC & 27.8\%\\\cline{2-4}
+        & 5\% & Energy usage & 28926 kWh & - \\\cline{3-5}
+        & & Avg increase in TTC & 27.8\% & - \\\cline{2-5}
         
-        & 10\% & Energy usage & 39827 kWh\\\cline{3-4}
-        & & Avg increase in TTC & 18.8\%\\\cline{2-4}
-        \hline
-        
-        \multirow{6}{*}{MinNodesAvail} & 1\% & Energy usage & 23577 kWh\\\cline{3-4}
-        & & Avg increase in TTC & 8.6\%\\\cline{2-4}
-        
-        & 5\% & Energy usage & 35865 kWh\\\cline{3-4}
-        & & Avg increase in TTC & .35\%\\\cline{2-4}
-        
-        & 10\% & Energy usage & 51579 kWh\\\cline{3-4}
-        & & Avg increase in TTC & .016\%\\\cline{2-4}
+        & 10\% & Energy usage & 39827 kWh & - \\\cline{3-5}
+        & & Avg increase in TTC & 18.8\% & - \\\cline{2-5}
         \hline
         
-        \multirow{6}{*}{NoImmSleep} & 60s & Energy usage & 21661 kWh\\\cline{3-4}
-        & & Avg increase in TTC & 11.8\%\\\cline{2-4}
+        \multirow{6}{*}{MinNodesAvail} & 1\% & Energy usage & 23577 kWh & 142471 kWh \\\cline{3-5}
+        & & Avg increase in TTC & 8.6\% & .06\% \\\cline{2-5}
         
-        & 300s & Energy usage & 22870 kWh\\\cline{3-4}
-        & & Avg increase in TTC & 5.95\%\\\cline{2-4}
+        & 5\% & Energy usage & 35865 kWh & 284884 kWh \\\cline{3-5}
+        & & Avg increase in TTC & .35\% & 0\% \\\cline{2-5}
         
-        & 600s & Energy usage & 23812 kWh\\\cline{3-4}
-        & & Avg increase in TTC & 4.09  \%\\\cline{2-4}
+        & 10\% & Energy usage & 51579 kWh & - \\\cline{3-5}
+        & & Avg increase in TTC & .016\% & - \\\cline{2-5}
+        \hline
+        
+        \multirow{6}{*}{NoImmSleep} & 60s & Energy usage & 21661 kWh & 110528 kWh \\\cline{3-5}
+        & & Avg increase in TTC & 11.8\% & 6.85\% \\\cline{2-5}
+        
+        & 300s & Energy usage & 22870 kWh & 110719 kWh \\\cline{3-5}
+        & & Avg increase in TTC & 5.95\% & 4.69\% \\\cline{2-5}
+        
+        & 600s & Energy usage & 23812 kWh & 110930 kWh \\\cline{3-5}142471
+        & & Avg increase in TTC & 4.09\% & 3.94\% \\\cline{2-5}
         \hline
     \end{tabular}
     \caption{Measurement of energy and performance overhead of different sleep schedulers on the DAS2 cluster}
