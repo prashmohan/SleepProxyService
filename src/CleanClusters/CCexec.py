@@ -22,7 +22,7 @@ DEAD_WAIT_TIME  = 300 # seconds
 MIN_CPU_AVAIL   = 1200  # Mhz
 TIME_BTW_CONN   = 0.5 # seconds
 TIME_BTW_NODE_CHECK = 0.1 # seconds
-ACPI_MAX_WAKEUP_TIME = 10 # seconds
+ACPI_MAX_WAKEUP_TIME = 5 # seconds
 CONN_MAX_RETRY_COUNT = math.ceil(ACPI_MAX_WAKEUP_TIME / TIME_BTW_CONN)
 
 
@@ -35,6 +35,9 @@ def parse_options():
     if not options.command or not options.instances:
         print parser.usage
         sys.exit(1)
+        
+    if not options.verbose:
+        logging.basicConfig(level=logging.INFO)
     job = Job(options.command, int(options.instances))
     return job
 
@@ -213,7 +216,7 @@ class Scheduler(object):
                 cpu_speed = int(host['cpu_speed'][0])
                 cpu_avail = idle * cpu_num * cpu_speed
                 node = Node(host_name, ip, mac, cpu_avail)                
-                if time.time() - host['last_heard'] > DEAD_WAIT_TIME and (not host.has_key('SLEEP_INTENT') or host['SLEEP_INTENT'] != 'YES'):
+                if time.time() - host['last_heard'] > DEAD_WAIT_TIME and (not host.has_key('SLEEP_INTENT') or host['SLEEP_INTENT'] != 'YES') or not host.has_key('MACADDR'):
                     self.dead_nodes.append(node)
                 elif host.has_key('SLEEP_INTENT') and host['SLEEP_INTENT'] == 'YES':
                     self.sleep_nodes.append(node)

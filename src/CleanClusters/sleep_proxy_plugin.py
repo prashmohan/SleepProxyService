@@ -139,11 +139,6 @@ class SleepPlugin(GmetadPlugin):
                         logging.error("Could not connect to host who wants to sleep. Probably already slept")                    
                 currentHost[metricName] = metricVal
 
-        for cluster in clusterState.keys():
-            curCluster = clusterState[cluster]
-            for node in curCluster.keys():
-                print node, curCluster[node]
-
 
 if __name__ == '__main__':
     print "This is not a stand alone program. This should be executed only as part of the python gmetad program as a plugin!"
