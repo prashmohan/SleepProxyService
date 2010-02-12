@@ -16,6 +16,7 @@ import threading
 import logging
 import common
 import time
+import subprocess
 import select
 
 DEAD_WAIT_TIME  = 300 # seconds
@@ -86,25 +87,27 @@ class Node(threading.Thread):
     def wakeup(self):
         if not self.mac == "":
             logging.info ("Waking up Node " + self.name)
-            subprocess.Popen('wakeonlan ' + self.mac)            
+            proc = subprocess.Popen(['/usr/bin/wakeonlan', self.mac], stdout=subprocess.PIPE)
+            proc.wait()
         else:
             logging.info ("Node " + self.name + " does not have an associated mac address. Cannot be woken up")
         
     def connect(self):
         self.retries += 1
         try:
+            self.wakeup()
             logging.debug("Attempting to connect to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
             self.sock.connect((self.ip, common.CCD_EXEC_PORT))
             self.connected = True
-            logging.info("Connected to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
+            logging.info("Connected to " + self.name + ":" + str(common.CCD_EXEC_PORT))
         except:
-            logging.exception("Could not connect to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
+            logging.error("Could not connect to " + self.name + ":" + str(common.CCD_EXEC_PORT))
             raise
         
     def execute(self, job):
         """Try and execute a job on the node. Returns False if unsuccessful"""
         try:
-            logging.info(time.ctime() + ": Sending " + job.command + " to " + self.ip + ":" + str(common.CCD_EXEC_PORT))
+            logging.info(time.ctime() + ": Sending " + job.command + " to " + self.name + ":" + str(common.CCD_EXEC_PORT))
             self.sock.send(job.command + '\n')
         except:
             logging.exception("Could not send job command")
@@ -150,7 +153,7 @@ class StdinFeeder(threading.Thread):
     def run(self):
         while True:
             line = sys.stdin.readline()
-            for sock in sock_list:
+            for sock in self.sock_list:
                 try:
                     logging.debug ("Sending " + line)
                     sock.send(line)                    
@@ -186,7 +189,7 @@ class Scheduler(object):
         buf = ''    
         try:
             # Connect to server and send data
-            sock.connect(('localhost', common.CLUSTER_STATE_SERVER_PORT))
+            sock.connect((common.get_ip_address(), common.CLUSTER_STATE_SERVER_PORT))
             while True:
                 bytes = sock.recv(8192)
                 if not bytes: # end of transfer
@@ -211,6 +214,8 @@ class Scheduler(object):
                 mac = ''
                 if host.has_key('MACADDR'):
                     mac = host['MACADDR'][0]
+                else:
+                    logging.info("node " + host['IP'] + " does not have a MAC address")
                 idle = float(host['cpu_idle'][0])
                 cpu_num = int(host['cpu_num'][0])
                 cpu_speed = int(host['cpu_speed'][0])
@@ -230,7 +235,6 @@ class Scheduler(object):
     
     def _get_next_node(self):
         return_node = None
-        
         if not self.active_node_ptr >= len(self.active_nodes): # nodes are still available in the active queue
             return_node = self.active_nodes[self.active_node_ptr]
             self.active_node_ptr += 1
@@ -246,13 +250,14 @@ class Scheduler(object):
         return return_node
         
     def _populate_node_list(self, total_nodes):
-        logging.debug("Populating list with " + str(total_nodes) + " nodes")
+        # logging.debug("Populating list with " + str(total_nodes) + " nodes")
         new_list = []
         while len(new_list) < total_nodes:
             new_node = self._get_next_node()
             if not new_node:
                 logging.error ("No more nodes available for execution")
                 sys.exit(1)
+            logging.info("Adding node to population list: " + repr(new_node))
             new_list.append(new_node)
         return new_list
     
@@ -327,6 +332,6 @@ def main():
     scheduler.schedule(job)
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     main()
 

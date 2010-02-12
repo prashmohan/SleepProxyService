@@ -88,6 +88,7 @@ class CCexecd(SocketServer.StreamRequestHandler):
             LAST_JOB_FINISH = time.time()   # also log failed job, it was an attempt after all
             print 'Closing socket'
             self.request.close()
+            monitor.identify_no_sleep()
     
 class CCMonitor(object):
     """This class monitor's the system for any jobs currently being run and issues a request to sleep when idle"""
@@ -96,7 +97,7 @@ class CCMonitor(object):
         self.enable_sleep = False
         if len(sys.argv) > 1 and sys.argv[1] == "--sleep":
             self.enable_sleep = True
-        self.last_sleep_metric = False
+        self.last_sleep_metric = True # Needs to be true in order to trigger first update of no sleep intent
         self.can_sleep = False
         macaddr = common.get_mac_addr()
         if macaddr == '':
@@ -132,7 +133,7 @@ class CCMonitor(object):
     
     def identify_no_sleep(self):
         """Inform gmond that this node does not need to go to sleep"""
-        if not self.last_sleep_metric:
+        if not self.last_sleep_metric and (time.time() - LAST_WAKEUP <= IDLE_BEFORE_SLEEP_INTVL):
             return
         logging.info("Executing: " + repr([self.GMETRIC_PATH, '-n', "SLEEP_INTENT", '-v', "NO", '-t', "string"]))
         subprocess.Popen([self.GMETRIC_PATH, '-n', "SLEEP_INTENT", '-v', "NO", '-t', "string"])

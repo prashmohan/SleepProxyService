@@ -54,16 +54,17 @@ class SleepPlugin(GmetadPlugin):
         # The call to the parent class __init__ must be last
         GmetadPlugin.__init__(self, cfgid)
         logging.debug ("Starting cluster state server")
-        self.stateThread = common.ServiceLauncher(common.CLUSTER_STATE_SERVER_PORT, ClusterStateServer, address="localhost")
+        self.stateThread = common.ServiceLauncher(common.CLUSTER_STATE_SERVER_PORT, ClusterStateServer, address='192.168.0.1')
         self.stateThread.start()
         logging.debug("Cluster state server has started")
+
     
-    def _parseConfig(self, cfgdata):
-        '''This method overrides the plugin base class method.  It is used to
-            parse the plugin specific configuration directives.'''
-        for kw,args in cfgdata:
-            if self.kwHandlers.has_key(kw):
-                self.kwHandlers[kw](args)
+    # def _parseConfig(self, cfgdata):
+    #     '''This method overrides the plugin base class method.  It is used to
+    #         parse the plugin specific configuration directives.'''
+    #     for kw,args in cfgdata:
+    #         if self.kwHandlers.has_key(kw):
+    #             self.kwHandlers[kw](args)
 
     def start(self):
         '''Called by the engine during initialization to get the plugin going.'''
@@ -132,6 +133,7 @@ class SleepPlugin(GmetadPlugin):
                     
                     try:
                         # Connect to server and send data
+                        logging.info("Connecting to (" + hostNode.getAttr('ip') + ":" + str(common.CCD_PORT) + ") to grant sleep permission")
                         sock.connect((hostName, common.CCD_PORT))
                         sock.send("SLEEP RECEIVED\n")
                         sock.close()
