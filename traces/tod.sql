@@ -1,0 +1,1 @@
+select count(SubmitTime), SubmitTime - (select min(SubmitTime) from Jobs) from Jobs where SubmitTime > 0 group by SubmitTime;

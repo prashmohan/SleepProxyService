@@ -1,0 +1,1 @@
+select SubmitTime, count(SubmitTime) from Jobs WHERE SubmitTime >= 0 GROUP BY SubmitTime;

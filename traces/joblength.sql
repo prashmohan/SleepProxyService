@@ -1,0 +1,1 @@
+select RunTime, count(RunTime) from Jobs WHERE RunTime >= 0 GROUP BY RunTime;

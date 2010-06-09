@@ -1,0 +1,1 @@
+select WaitTime, count(WaitTime) from Jobs WHERE WaitTime >= 0 GROUP BY WaitTime;
