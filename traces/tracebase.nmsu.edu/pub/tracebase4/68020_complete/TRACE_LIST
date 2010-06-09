@@ -1,0 +1,12 @@
+CPU	Program	Pgm Type       Filt    All	Total Refs	Instructions
+---	-------	--------       ----    ---	---------	------------
+68020
+	gcc	compiler	N	Y	 131,008	   74,552
+	gpssh	simulator	N	Y	  98,300	   34,913
+	spice	circ sim	N	Y	  98,300	   47,728
+
+	These short traces are of interest due to the presence of all
+	bus activity during the program execution, including interrupts,
+	system references, and even co-processor activity.  Collected
+	using a Tektronix DAS-9200 and NMSU-developed hardware from
+	a Sun 3/60.
